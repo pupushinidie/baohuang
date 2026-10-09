@@ -1,0 +1,24 @@
+{
+  "name": "baohuang",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "workspaces": ["apps/*", "packages/*"],
+  "scripts": {
+    "build:game": "npm run build -w @baohuang/game",
+    "test": "vitest run",
+    "typecheck": "tsc -b && npm run typecheck -w @baohuang/server && npm run typecheck -w @baohuang/web",
+    "predev": "npm run build:game",
+    "dev": "concurrently -k -n server,web \"npm:dev:server\" \"npm:dev:web\"",
+    "start": "npm run build:game && npm run start -w @baohuang/server",
+    "dev:server": "npm run dev -w @baohuang/server",
+    "dev:web": "npm run dev -w @baohuang/web",
+    "build": "npm run build:game && npm run build -w @baohuang/web"
+  },
+  "devDependencies": {
+    "concurrently": "^9.2.1",
+    "typescript": "^5.9.3",
+    "tsx": "^4.20.5",
+    "vitest": "^3.2.4"
+  }
+}
