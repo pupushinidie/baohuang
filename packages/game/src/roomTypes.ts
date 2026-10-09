@@ -1,8 +1,8 @@
-import type { GameOptions } from "./engine.js";
+import type { GameOptions } from "./types.js";
 import type { GameCommand, GameState } from "./types.js";
 
-/** 斗地主始终 3 个座位；1–3 个真人，空座由机器人补位。 */
-export const SEAT_COUNT = 3;
+/** 保皇始终 5 个座位；1–5 个真人，空座开局时由人机补位。 */
+export { SEAT_COUNT } from "./baohuang.js";
 
 export interface LobbyMember {
 	readonly id: string;
@@ -41,8 +41,13 @@ export interface LobbyRoomSnapshot {
 	readonly access: RoomAccess;
 	readonly chat: RoomChatMessage[];
 	readonly game?: GameState;
-	/** 当前这一步剩余的毫秒数（发送时）；超时自动处理，见 timeoutTurn。 */
+	/** 当前这一步剩余的毫秒数（发送时）；超时自动处理，见 timeoutTurn。同时选的阶段（抢独、表态）对所有人一样。 */
 	readonly turnRemainingMs?: number;
+	/**
+	 * 只发给自己：抢独、表态时自己已经提交、服务器还在随机延迟 1–3 秒后才生效的那个选择
+	 * （联机设定：同时表态的提交都隔一个随机时间，别人从时间上看不出身份）。界面显示「已选，等待公布」。
+	 */
+	readonly queued?: GameCommand;
 	/** 整轮结束后的「是否继续」投票；remainingMs 为发送时剩余的毫秒数。 */
 	readonly rematch?: RematchState;
 	/** 当前在语音里的成员。 */
@@ -132,7 +137,7 @@ export interface ClientToServerEvents {
 	"room:rematch": (accept: boolean, ack: RoomAck<void>) => void;
 	"room:kick": (memberId: string, ack: RoomAck<void>) => void;
 	"room:access": (settings: Partial<RoomAccess>, ack: RoomAck<void>) => void;
-	/** 等待中房主修改开房选项（底分、盘数、明牌、加倍……）。 */
+	/** 等待中房主修改开房选项（盘数、抢独、憋 6、造反、让位贴牌、特画）。 */
 	"room:options": (options: Partial<GameOptions>, ack: RoomAck<void>) => void;
 	/** 等待中：观战的人坐到空座位上 / 玩家（房主除外）改成观战。 */
 	"room:sit": (ack: RoomAck<void>) => void;

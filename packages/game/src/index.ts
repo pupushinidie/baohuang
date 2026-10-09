@@ -1,9 +1,20 @@
 export * from "./types.js";
 export * from "./cards.js";
-export { allLeadMoves, beatingMoves, beats, canBeat, classify, COMBO_NAMES, comboKey, comboLabel } from "./combos.js";
-export type { Combo, ComboType, Move } from "./combos.js";
-export { DEFAULT_OPTIONS, ddzConfig, HAND_SIZE, multiplierOf, nextSeat, resolvePlay, stackDeal } from "./ddz.js";
-export { decompose, handStrength, hintMoves } from "./bot.js";
+export { beats, checkPlay, effRank, isWild, NO_RULES, parseSet, playOptions } from "./sets.js";
+export type { ParsedSet, SetRules } from "./sets.js";
+export {
+  baohuangConfig,
+  chooseTieCard,
+  declareChoices,
+  DEFAULT_OPTIONS,
+  isSimultaneous,
+  nextSeat,
+  prevSeat,
+  scoreHand,
+  setRules,
+  stackDeal,
+  timeoutLead,
+} from "./baohuang.js";
 export {
   applyCommand,
   botCommand,
@@ -12,12 +23,16 @@ export {
   pendingSeats,
   redactGameForViewer,
   scoreOf,
+  simultaneousStage,
+  spectatorGodView,
   stepSeconds,
   timeoutCommand,
   timeoutTurn,
   timerKey,
 } from "./engine.js";
-export type { GameOptions, NewPlayer } from "./engine.js";
+export type { NewPlayer } from "./engine.js";
+export { buildDeal, createScene, dealSizes, pickCards, runStep, scene, SCENE_NAMES, sceneSnapshot, simpleCommand, toSnapshot } from "./scenes.js";
+export type { DealSpec, SceneResult, SceneSpec, SceneStep, SnapshotOptions } from "./scenes.js";
 export { createRng } from "./rng.js";
 export type { Rng } from "./rng.js";
 export { DEFAULT_ROOM_ACCESS, SEAT_COUNT } from "./roomTypes.js";
