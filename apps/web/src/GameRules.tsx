@@ -1,13 +1,13 @@
 import { useEffect, useState } from "react";
-import { parseCards, type Card } from "@baohuang/game";
+import { parseCards, type CardId } from "@baohuang/game";
 import { CardRow } from "./cards.js";
 
-/** 示意牌：顺子 3–7、飞机带单 333444+5+9、炸弹、王炸。 */
-const EXAMPLES: { label: string; cards: Card[] }[] = [
-  { label: "顺子", cards: parseCards("3 4 5 6 7") },
-  { label: "飞机带单", cards: parseCards("3 3 3 4 4 4 5 9") },
-  { label: "炸弹", cards: parseCards("8 8 8 8") },
-  { label: "王炸", cards: parseCards("小 大") },
+/** 示意牌：一套牌的几种样子（引擎阶段写的初版，界面阶段可以重排）。 */
+const EXAMPLES: { label: string; cards: CardId[] }[] = [
+  { label: "三张 8", cards: parseCards("S8 H8 C8") },
+  { label: "9 挂小王", cards: parseCards("S9 H9 小") },
+  { label: "只出王", cards: parseCards("大 小") },
+  { label: "叫保：三张红桃 9", cards: parseCards("H9 H9 H9") },
 ];
 
 /** 规则说明：一个按钮，点开是像素弹窗。用自己的话写，不照搬别人的规则书。 */
@@ -22,36 +22,30 @@ function GameRules() {
 
   return (
     <>
-      <button className="quiet-button dz-rules-button" type="button" aria-expanded={open} onClick={() => setOpen(true)}>规则</button>
+      <button className="quiet-button bh-rules-button" type="button" aria-expanded={open} onClick={() => setOpen(true)}>规则</button>
       {open && (
         <div className="gm-modal-backdrop" role="presentation" onClick={() => setOpen(false)}>
-          <section className="gm-panel dz-rules" role="dialog" aria-modal="true" aria-labelledby="dz-rules-title" onClick={(event) => event.stopPropagation()}>
-            <h2 id="dz-rules-title">斗地主怎么打</h2>
+          <section className="gm-panel bh-rules" role="dialog" aria-modal="true" aria-labelledby="bh-rules-title" onClick={(event) => event.stopPropagation()}>
+            <h2 id="bh-rules-title">保皇怎么打</h2>
+            <div className="game-rules-block">
+              <h3>谁和谁一伙</h3>
+              <p>5 个人、4 副牌（去掉 3、4、5，共 168 张）。每盘有一个<b>皇帝</b>和一个<b>侍卫</b>（保皇派），另外 3 个人是<b>革命党</b>。皇帝是谁大家都知道；侍卫是谁一开始只有侍卫自己知道，连皇帝也不知道。按名次给每个人算分，打满约定的盘数，个人累计分最高的人赢。</p>
+            </div>
             <div className="game-rules-block">
               <h3>一盘的流程</h3>
               <ol>
-                <li>一副 54 张牌，每人 17 张，3 张底牌扣着。开了「明牌」的房间，发牌前可以选「明牌开始」：不看牌就把手牌亮给大家，这一盘 ×5，而且你第一个叫。</li>
-                <li><b>叫地主</b>：从随机的一个人开始（有人明牌开始就从他开始）轮流选叫或不叫，有人叫就进入抢地主。三家都不叫就重新发牌。</li>
-                <li><b>抢地主</b>：没说过「不叫」的人各有一次机会抢，每抢一次倍数 ×2；有人抢过的话，叫地主的人最后还能再抢一次。最后一个抢的人当地主，没人抢就是叫的人。</li>
-                <li>地主亮出 3 张底牌收进手里（20 张），另外两人是农民，一伙。</li>
-                <li><b>加倍</b>（房主可关）：三人同时选不加倍 / 加倍（×2），开了超级加倍还能选 ×4，选完一起公布。加倍只翻自己和对手之间的那份。地主还可以选明牌（×2）。</li>
-                <li><b>出牌</b>：地主先出。之后每人要么出同样牌型、同样张数、更大的牌，要么不出；炸弹、王炸能压别的牌型。另外两人都不出时，这一轮最后出牌的人重新出任意牌型。不出过的人，下一圈轮到时还能接着出。</li>
-                <li>谁先出完，谁那一方就赢：地主出完地主赢；任意一个农民出完，两个农民一起赢。</li>
+                <li><b>登基</b>：拿到皇牌（带皇冠的大王）的人可以登基，也可以让位给上家。登基要手里有「同花色同点数恰好 3 张或 4 张」的牌。转一圈都没人登基，就从最先拿皇牌的人起，第一个有恰好 3 张的人必须登基；都没有就重新发牌。</li>
+                <li><b>叫保</b>：皇帝亮出 3 张同花色同点数的牌（比如三张红桃 9），第 4 张在谁手里谁就是侍卫。皇帝有 4 张时可以一个人打四个（独保）：只亮 3 张是暗独，亮 4 张是明独。</li>
+                <li><b>表态</b>：其他 4 人同时选，选完一起公布。侍卫选明保（公开身份，本盘 ×2）或暗保；其他人选造反或不造反——2 人以上造反就成功（侍卫被揭开，本盘 ×2），只有 1 个人造反算失败，他自己暴露是革命党。最多 ×2。</li>
+                <li><b>出牌</b>：皇帝先出。之后轮流出更大的同张数的牌，或者不要；不要了下一圈还能接着出。其他还有牌的人都不要时，最后出牌的人重新随便出。最后一手打完就「走科」；他这一手没人压的话，由他后面第一个还有牌的人接着出（接风）。</li>
+                <li>侍卫打出那第 4 张保牌时，身份自动公开（倍数不变）。</li>
               </ol>
             </div>
             <div className="game-rules-block">
-              <h3>大小</h3>
-              <p>3 &lt; 4 &lt; … &lt; 10 &lt; J &lt; Q &lt; K &lt; A &lt; 2 &lt; 小王 &lt; 大王，花色不分大小。王炸最大；炸弹压其他所有牌型，炸弹之间比点数；其他牌只能被同牌型、同张数、点数更大的牌压，带的牌不算大小。</p>
-            </div>
-            <div className="game-rules-block">
-              <h3>牌型</h3>
-              <ul>
-                <li>单张、对子、三张；三带一（带一张单）、三带一对。</li>
-                <li>顺子：5 张以上连续的单牌，只能 3 到 A（2 和王不能连）。连对：3 对以上连续。飞机：2 个以上连续的三张。</li>
-                <li>飞机带单 / 飞机带对：每个三张各带一张单牌 / 一个对子。四带二（两张单，可以同点数）、四带两对。带的牌不能和主体同点数，不能同时带两张王。</li>
-                <li>炸弹：4 张同点数。王炸：小王 + 大王。四带二、四带两对不算炸弹。</li>
-              </ul>
-              <div className="dz-rules-examples">
+              <h3>一套牌和比大小</h3>
+              <p>一套牌是同点数的普通牌若干张，可以再挂任意张王；或者只出王。没有顺子，2 不能和别的点数一起出。点数：6 &lt; 7 &lt; … &lt; A &lt; 2 &lt; 小王 &lt; 大王（皇牌就是大王），花色不分大小。</p>
+              <p>要压住上一套：<b>张数相同</b>，两套各自从大到小排，<b>每一张都比对面那张大</b>，打平不算。所以「大王 小王」压不住「小王 小王」；挂了大王的一套谁也压不了。</p>
+              <div className="bh-rules-examples">
                 {EXAMPLES.map((example) => (
                   <span key={example.label}>
                     <CardRow cards={example.cards} scale={1} step={16} />
@@ -62,16 +56,14 @@ function GameRules() {
             </div>
             <div className="game-rules-block">
               <h3>计分</h3>
-              <p>倍数 = 2^抢地主次数 × 明牌（明牌开始 5、地主明牌 2，只取最大的）× 2^(炸弹 + 王炸个数) × 春天或反春 2。春天：地主赢，两个农民一张都没出过；反春：农民赢，地主只出过第一手。</p>
-              <p>每个农民和地主之间的输赢 = 底分 × 倍数 × 农民的加倍 × 地主的加倍。地主赢就从两个农民那里各收一份，输了各赔一份，所以地主的输赢是两份加起来。打满约定的盘数，总分最高的人获胜，同分并列。</p>
+              <p>一方的人都走完，这盘就结束（暗独：皇帝走了或 2 个革命党走了；明独：任何一个人走了）。二打三时，侍卫得分 = 6 −（皇帝名次 + 侍卫名次），皇帝是侍卫的 2 倍，每个革命党是侍卫的相反数；明保或造反成功再 ×2。暗独：皇帝头科 +12、二科 0、更差 −12（另外 4 人各得相反的四分之一）；明独：皇帝头科 +24，否则 −24。</p>
             </div>
             <div className="game-rules-block">
-              <h3>操作</h3>
+              <h3>开房选项和本站设定</h3>
               <ul>
-                <li>点牌选中，按住在牌上拖可以一次选一串；右键清空。「提示」会从小到大轮流给出能压的牌。</li>
-                <li>快捷键：空格出牌、P 不出、H 提示、Esc 取消选择；叫抢加倍时 Y 是、N 否，S 超级加倍；结算时 N 下一盘。</li>
-                <li>限时：明牌开始 5 秒，叫抢、加倍各 10 秒，出牌 25 秒。超时自动处理：不叫、不抢、不加倍、不明牌；该你先出就出最小的一张，跟牌就不出。连续超时 2 次转托管（人机替你打），点「取消托管」恢复；掉线 3 秒后由人机代打，用原昵称回来就能接上。</li>
-                <li>房主开了记牌器的话，牌桌上显示每种牌外面（别人手里）还剩几张。</li>
+                <li>盘数 3 / 5 / 8 / 10；抢独（发完牌 5 秒内抢明独）、憋 6（6 只能留到最后一次出完、不能挂王）、造反、让位贴牌（第 2 次让位起每次多交一张最大的牌）、特画（侍卫那张保牌当比大王还大的超级王）。</li>
+                <li>限时：登基 10 秒、叫保 15 秒、表态 10 秒、出牌 25 秒。超时：让位、叫第一种 3 张、暗保 / 不造反；该你先出就出最小的一张，跟牌就不要。连续超时 2 次转托管（人机替你打）；掉线 3 秒后人机代打，用原昵称回来就能接上。</li>
+                <li>为了保密：不能登基的人也会等几秒才让位；表态时看不到谁选了，所有人的选择都隔 1–3 秒才生效。</li>
               </ul>
             </div>
             <div className="gm-panel-actions">

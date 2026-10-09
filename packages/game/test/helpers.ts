@@ -12,7 +12,7 @@ import {
   type SceneStep,
 } from "../src/index.js";
 
-export const SEATS = [0, 1, 2, 3, 4] as const;
+export const SEATS: readonly number[] = [0, 1, 2, 3, 4];
 
 /** 跑一串步骤（createScene 的写法）。 */
 export function steps(state: BaohuangState, list: readonly SceneStep[]): BaohuangState {

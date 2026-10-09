@@ -1,24 +1,16 @@
-/** 美术资源（art/ 下的脚本导出到 public/art/）和座位色。 */
+/** 美术资源（简洁版由 art/simple.py 画，正式美术同名覆盖，见 art/spec.md）和座位色。 */
 const BASE = `${import.meta.env.BASE_URL}art/`;
 
 export const art = {
-  /** 乡村大院场景（512×288）：夜间灯笼月光、白天柿子树麦垛。牌桌背景和首页主图。 */
+  /** 金銮殿场景（512×288）：夜间 / 白天。牌桌背景和首页主图。 */
   sceneNight: `${BASE}scene-night.png`,
   sceneDay: `${BASE}scene-day.png`,
-  /** 座位头像 0–2（40px）。 */
-  avatar: (index: number) => `${BASE}avatar-${index % 3}.png`,
-  /** 地主帽、农民草帽（32px）。 */
-  hatLandlord: `${BASE}hat-landlord.png`,
-  hatFarmer: `${BASE}hat-farmer.png`,
-  /** 特效：炸弹、火箭（王炸）、爆炸、春天的桃花。 */
-  bomb: `${BASE}bomb.png`,
-  rocket: `${BASE}rocket.png`,
-  boom: `${BASE}boom.png`,
-  spring: `${BASE}spring.png`,
+  /** 座位头像 0–4。 */
+  avatar: (index: number) => `${BASE}avatar-${index % 5}.png`,
 };
 
-/** 座位色：自己、下家（右）、上家（左）。 */
-export const SEAT_COLORS = ["#f0b53a", "#3f8fe8", "#47b968"] as const;
+/** 座位色（art/spec.md：Okabe-Ito 色盲安全色 + 银白），只区分座位，和阵营无关。 */
+export const SEAT_COLORS = ["#e69f00", "#56b4e9", "#009e73", "#cc79a7", "#e8e4d8"] as const;
 
 export function seatColor(index: number): string {
   return SEAT_COLORS[index % SEAT_COLORS.length]!;

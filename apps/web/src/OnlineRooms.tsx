@@ -1,4 +1,4 @@
-import type { PublicRoomSummary } from "@baohuang/game";
+import { SEAT_COUNT, type PublicRoomSummary } from "@baohuang/game";
 import AdminBar, { adminEntryEnabled, useAdminToken } from "./AdminBar.js";
 import { socket } from "./socket.js";
 
@@ -56,7 +56,7 @@ function OnlineRooms({ rooms, connected, busy, onJoin }: {
                 <span className="online-room-seats">
                   {room.open ? <em className="online-room-tag open">公开</em> : null}
                   {room.spectators > 0 ? <em className="online-room-tag">观战 {room.spectators}</em> : null}
-                  {optionsLabel(room)} · {room.players.length} 人{room.players.length < 3 ? ` + ${3 - room.players.length} 人机` : ""}
+                  {optionsLabel(room)} · {room.players.length} 人{room.players.length < SEAT_COUNT ? ` + ${SEAT_COUNT - room.players.length} 人机` : ""}
                 </span>
               </div>
               <ul className="online-room-players">
@@ -73,7 +73,7 @@ function OnlineRooms({ rooms, connected, busy, onJoin }: {
                 ))}
               </ul>
               {(() => {
-                const canSit = room.open && room.status === "waiting" && room.players.length < 3;
+                const canSit = room.open && room.status === "waiting" && room.players.length < SEAT_COUNT;
                 if (!canSit && !room.allowSpectators) return null;
                 return (
                   <div className="online-room-actions">
@@ -98,10 +98,11 @@ function OnlineRooms({ rooms, connected, busy, onJoin }: {
   );
 }
 
-/** 房间卡片上的选项：「6 盘 · 底分 1」这样的短说明。 */
+/** 房间卡片上的选项：「5 盘 · 抢独 · 特画」这样的短说明。 */
 function optionsLabel(room: PublicRoomSummary): string {
   const options = room.options;
-  return `${options.hands} 盘 · 底分 ${options.base}`;
+  const extras = [options.grabSolo && "抢独", options.bie6 && "憋 6", !options.rebel && "不造反", options.tieCard && "贴牌", options.tehua && "特画"].filter(Boolean);
+  return [`${options.hands} 盘`, ...extras].join(" · ");
 }
 
 export default OnlineRooms;
