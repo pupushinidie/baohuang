@@ -1,4 +1,6 @@
 import { AddressInfo } from "node:net";
+// 人机、自动让位、表态的保密延迟都变成 0（要在导入服务器之前设好）。
+process.env.BOT_DELAY_SCALE = "0";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { io as createClient, type Socket } from "socket.io-client";
 import {
@@ -19,13 +21,13 @@ import {
 const CAPACITY = SEAT_COUNT;
 /** 这款游戏有没有藏起来的信息。 */
 const HIDDEN_INFO = true;
-/** 开局后先走几步（每步选轮到的人的第一个合法动作），让场上有藏起来的牌。 */
-const STEPS = 4;
-/** 只在服务端的字段（牌堆顺序、种子等），观战的人永远拿不到。 */
-const SERVER_ONLY = ["wall", "seed", "rng", "log"];
-/** 这份状态里看得到几样藏起来的东西（手牌之类）。 */
+/** 开局后先走几步（每步选能动的人的第一个合法动作：登基、叫保、表态、出牌），让场上有藏起来的牌和侍卫。 */
+const STEPS = 12;
+/** 只在服务端的字段（种子、随机数状态、操作记录、超时名单），观战的人永远拿不到。 */
+const SERVER_ONLY = ["seed", "rng", "log", "timedOut"];
+/** 这份状态里看得到几样藏起来的东西：手牌 + 还没公开的侍卫是谁。 */
 function secretsSeen(game: GameState): number {
-  return game.players.reduce((total, player) => total + player.hand.length, 0);
+  return game.players.reduce((total, player) => total + player.hand.length, 0) + (game.guard !== null && !game.guardRevealed ? 1 : 0);
 }
 // ----------------------------------------
 
@@ -55,7 +57,7 @@ function nick(prefix: string): string {
 }
 
 function create(client: TestSocket, name: string): Promise<LobbyRoomSnapshot> {
-  return new Promise((resolve, reject) => client.emit("room:create", { name, options: { mingpai: false } }, (response: AckResponse<LobbyRoomSnapshot>) => {
+  return new Promise((resolve, reject) => client.emit("room:create", { name, options: {} }, (response: AckResponse<LobbyRoomSnapshot>) => {
     if (response.ok) resolve(response.data);
     else reject(new Error(response.error));
   }));
@@ -195,16 +197,24 @@ describe("观战和公开房间", () => {
     await updateWhere(viewer, (snapshot) => snapshot.game !== undefined);
     for (const client of players) await updateWhere(client, (snapshot) => snapshot.game !== undefined);
 
-    // 先走几步，让场上有藏起来的牌。
-    for (let step = 0; step < STEPS; step += 1) {
+    // 先走几步，让场上有藏起来的牌。服务器也会替「只能让位」的人自动让位，所以操作可能被抢先，被拒就重新看。
+    let done = 0;
+    for (let attempt = 0; attempt < 80 && done < STEPS; attempt += 1) {
       const mover = players.find((client) => legalActions(latest.get(client)!.game!, seatOf(client)).length > 0);
-      if (!mover) break;
+      if (!mover) {
+        await delay(40);
+        continue;
+      }
       const action = legalActions(latest.get(mover)!.game!, seatOf(mover))[0]!;
-      const version = latest.get(viewer)!.game!.version;
-      expect((await call<LobbyRoomSnapshot>((ack) => mover.emit("game:command", action, ack))).ok).toBe(true);
-      await updateWhere(viewer, (snapshot) => snapshot.game!.version !== version);
-      await delay(20);
+      const response = await call<LobbyRoomSnapshot>((ack) => mover.emit("game:command", action, ack));
+      if (response.ok) done += 1;
+      await delay(40);
     }
+    expect(done).toBeGreaterThan(5);
+    // 等所有人都收到最新的公开状态。
+    await delay(150);
+    const settled = latest.get(viewer)!.game!.version;
+    for (const client of players) await updateWhere(client, (snapshot) => snapshot.game!.version === settled);
 
     const blind = latest.get(viewer)!.game!;
     for (const key of SERVER_ONLY) expect(hiddenField((blind as unknown as Record<string, unknown>)[key])).toBe(true);

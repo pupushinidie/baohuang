@@ -10,13 +10,17 @@ import {
   createGame,
   DEFAULT_OPTIONS,
   DEFAULT_ROOM_ACCESS,
+  legalCommands,
   pendingSeats,
   redactGameForViewer,
   SEAT_COUNT,
+  simultaneousStage,
+  spectatorGodView,
   stepSeconds,
   timeoutTurn,
   timerKey,
   scoreOf,
+  type GameCommand,
   type ClientToServerEvents,
   type GameOptions,
   type IceServerConfig,
@@ -66,6 +70,11 @@ interface RoomState {
   botTimers: Map<string, ReturnType<typeof setTimeout>>;
   /** 这个决定点里每个还没决定的真人座位的截止时间。 */
   seatDeadlines: Map<number, number>;
+  /**
+   * 抢独、表态时真人已经提交、还在随机延迟里的选择（联机设定：同时表态的提交都隔 1–3 秒才生效，
+   * 免得别人从时间上看出身份）。按座位记，换决定点时清掉。
+   */
+  queued: Map<number, { command: GameCommand; timer: ReturnType<typeof setTimeout>; key: string }>;
 }
 
 const ROOM_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
@@ -82,9 +91,18 @@ const MAX_SPECTATORS = 20;
 const TURN_MS_OVERRIDE = process.env.TURN_MS ? Number(process.env.TURN_MS) : undefined;
 /** 离线的人由机器人代打，先等 3 秒（全站统一；不算超时），回来能接上。 */
 const OFFLINE_TURN_MS = Number(process.env.OFFLINE_TURN_MS ?? 3_000);
-/** 机器人每个决定的随机延迟：0.6–1.6 秒，像个人在想。 */
+/** 人机每个决定的随机延迟：出牌 0.6–1.6 秒，像个人在想。 */
 const BOT_MIN_MS = Number(process.env.BOT_MIN_MS ?? 600);
 const BOT_MAX_MS = Number(process.env.BOT_MAX_MS ?? 1_600);
+/**
+ * 保皇的保密设定（勘误 K6、开工拍板）：
+ * - 登基阶段：不能登基的人、人机，都随机等 2–6 秒再让位 / 登基，别人看不出谁是「秒让」；
+ * - 抢独、表态：所有人（含人机）的提交都随机延迟 1–3 秒才生效。
+ * 测试时 BOT_DELAY_SCALE=0 让这些延迟（和人机的出牌延迟）都变成 0。
+ */
+const BOT_DELAY_SCALE = Number(process.env.BOT_DELAY_SCALE ?? 1);
+const ABDICATE_DELAY_MS: readonly [number, number] = [2_000, 6_000];
+const DECLARE_DELAY_MS: readonly [number, number] = [1_000, 3_000];
 /** 空座位人机的名字（全站统一：咕噜一号、二号……，显示时带「人机」标签）。 */
 const BOT_NAMES = ["咕噜一号", "咕噜二号", "咕噜三号", "咕噜四号"];
 /** 每局结束后把种子和动作序列追加到这里，便于复盘。 */
@@ -160,7 +178,7 @@ function normalizeCode(value: unknown): string | null {
   return /^[A-HJ-NP-Z2-9]{6}$/.test(code) ? code : null;
 }
 
-/** 检查开房选项（规则书 8.1），不合法返回 null；没给的用默认值。 */
+/** 检查开房选项（规则书 8.1 + 开工拍板的两个变体），不合法返回 null；没给的用默认值。 */
 function normalizeOptions(value: unknown): GameOptions | null {
   if (value !== undefined && (!value || typeof value !== "object")) return null;
   const input = (value ?? {}) as Record<string, unknown>;
@@ -170,14 +188,14 @@ function normalizeOptions(value: unknown): GameOptions | null {
     return allowed.includes(raw as T) ? (raw as T) : undefined;
   };
   const flags = [true, false] as const;
-  const base = pick("base", [1, 2, 5] as const, DEFAULT_OPTIONS.base);
-  const hands = pick("hands", [3, 6, 9, 12] as const, DEFAULT_OPTIONS.hands);
-  const mingpai = pick("mingpai", flags, DEFAULT_OPTIONS.mingpai);
-  const doubling = pick("doubling", flags, DEFAULT_OPTIONS.doubling);
-  const superDouble = pick("superDouble", flags, DEFAULT_OPTIONS.superDouble);
-  const tracker = pick("tracker", flags, DEFAULT_OPTIONS.tracker);
-  if (base === undefined || hands === undefined || mingpai === undefined || doubling === undefined || superDouble === undefined || tracker === undefined) return null;
-  return { base, hands, mingpai, doubling, superDouble: doubling && superDouble, tracker };
+  const hands = pick("hands", [3, 5, 8, 10] as const, DEFAULT_OPTIONS.hands);
+  const grabSolo = pick("grabSolo", flags, DEFAULT_OPTIONS.grabSolo);
+  const bie6 = pick("bie6", flags, DEFAULT_OPTIONS.bie6);
+  const rebel = pick("rebel", flags, DEFAULT_OPTIONS.rebel);
+  const tieCard = pick("tieCard", flags, DEFAULT_OPTIONS.tieCard);
+  const tehua = pick("tehua", flags, DEFAULT_OPTIONS.tehua);
+  if (hands === undefined || grabSolo === undefined || bie6 === undefined || rebel === undefined || tieCard === undefined || tehua === undefined) return null;
+  return { hands, grabSolo, bie6, rebel, tieCard, tehua };
 }
 
 function generateRoomCode(): string {
@@ -188,6 +206,8 @@ function generateRoomCode(): string {
 
 function snapshot(room: RoomState, viewerId: string): LobbyRoomSnapshot {
   const seated = room.members.some((member) => member.id === viewerId);
+  const deadline = countdownFor(room, viewerId);
+  const queued = seated ? queuedFor(room, viewerId) : undefined;
   return {
     code: seated || room.invited.has(viewerId) ? room.code : "",
     options: { ...room.options },
@@ -197,35 +217,43 @@ function snapshot(room: RoomState, viewerId: string): LobbyRoomSnapshot {
     access: { ...room.access },
     chat: room.chat.map((entry) => ({ ...entry })),
     voice: [...room.voice].map(([id, state]) => ({ id, muted: state.muted })),
-    ...(countdownFor(room, viewerId) !== undefined ? { turnRemainingMs: Math.max(0, countdownFor(room, viewerId)! - Date.now()) } : {}),
+    ...(deadline !== undefined ? { turnRemainingMs: Math.max(0, deadline - Date.now()) } : {}),
+    ...(queued ? { queued } : {}),
     ...(room.rematch ? { rematch: { remainingMs: Math.max(0, room.rematch.deadline - Date.now()), acceptedIds: [...room.rematch.accepted] } } : {}),
     ...(room.game ? { game: seated ? redactGameForViewer(room.game, seatOf(room, viewerId)) : spectatorGame(room) } : {}),
   };
 }
 
-/** 这位观看者看到的倒计时（截止时间）：自己要做决定就是自己的；轮到别人时是那个人的；同时决定的阶段是还没选的人的。 */
+/** 这位成员自己已经提交、还在随机延迟里的抢独 / 表态（只发给他自己）。 */
+function queuedFor(room: RoomState, memberId: string): GameCommand | undefined {
+  const game = room.game;
+  if (!game) return undefined;
+  const seat = game.players.findIndex((player) => player.id === seatOf(room, memberId));
+  return room.queued.get(seat)?.command;
+}
+
+/**
+ * 这位观看者看到的倒计时（截止时间）：
+ * - 同时选的阶段（抢独、表态、结算）：所有人看到同一个阶段截止时间，不管谁已经选了（勘误 K6：不显示谁已选）；
+ * - 轮到某个人（登基、叫保、出牌）：那个人的截止时间（人机、托管、离线的座位没有截止时间，就不显示）。
+ */
 function countdownFor(room: RoomState, viewerId: string): number | undefined {
   const game = room.game;
-  if (!room.turn || !game) return undefined;
+  if (!game || game.phase === "finished" || room.stageKey !== timerKey(game)) return undefined;
+  if (simultaneousStage(game)) return room.stageStartedAt + stepMs(game);
   const seat = game.players.findIndex((player) => player.id === seatOf(room, viewerId));
   if (room.seatDeadlines.has(seat)) return room.seatDeadlines.get(seat);
   if (game.turn >= 0 && room.seatDeadlines.has(game.turn)) return room.seatDeadlines.get(game.turn);
-  if (game.turn < 0 && room.seatDeadlines.size > 0) return Math.min(...room.seatDeadlines.values());
   return undefined;
 }
 
 /**
- * 观战的人看到的对局：默认和不在座的人一样只有公开信息；房主打开「看手牌」后，
- * 每位玩家的部分换成他自己看到的样子（手牌可见），其余按当前行动者的视角。牌堆顺序、种子始终去掉。
+ * 观战的人看到的对局：默认和不在座的人一样只有公开信息；房主打开「观战看手牌」后是上帝视角
+ * （所有手牌、侍卫是谁、是不是暗独都能看到）。种子、随机数状态、操作记录始终去掉。
  */
 function spectatorGame(room: RoomState): GameState {
   const game = room.game!;
-  if (!room.access.spectatorsSeeAll) return redactGameForViewer(game, "");
-  const base = redactGameForViewer(game, game.players[game.turn]?.id ?? "");
-  return {
-    ...base,
-    players: game.players.map((player) => redactGameForViewer(game, player.id).players.find((candidate) => candidate.id === player.id)!),
-  } as GameState;
+  return room.access.spectatorsSeeAll ? spectatorGodView(game) : redactGameForViewer(game, "");
 }
 
 function isSpectator(room: RoomState, socketId: string): boolean {
@@ -305,7 +333,12 @@ function emitLobbyUpdate(): void {
   lobbyUpdateTimer.unref();
 }
 
-function emitRoomUpdate(room: RoomState): void {
+function emitRoomUpdate(room: RoomState, onlyTo?: string): void {
+  if (onlyTo !== undefined) {
+    // 同时选的阶段里一个人的选择：只告诉他自己（别人看到的状态没变，连「有人选了」也不让人知道）。
+    io.to(onlyTo).emit("room:updated", snapshot(room, onlyTo));
+    return;
+  }
   // 每位成员单独发送（各自的座位视角）。
   for (const member of room.members) {
     io.to(member.id).emit("room:updated", snapshot(room, member.id));
@@ -428,10 +461,16 @@ function clearTurnTimer(room: RoomState): void {
   delete room.turn;
 }
 
+function clearQueued(room: RoomState): void {
+  for (const entry of room.queued.values()) clearTimeout(entry.timer);
+  room.queued.clear();
+}
+
 function clearGameTimers(room: RoomState): void {
   clearTurnTimer(room);
   for (const timer of room.botTimers.values()) clearTimeout(timer);
   room.botTimers.clear();
+  clearQueued(room);
   delete room.stageKey;
 }
 
@@ -442,7 +481,7 @@ function setTurnDeadline(room: RoomState, deadline: number, key: string): void {
   room.turn = { deadline, timer, key };
 }
 
-/** 这个座位由机器人出手：空座位的机器人、托管、离线的人。 */
+/** 这个座位由人机出手：空座位的人机、托管、离线的人。 */
 function robotSeat(room: RoomState, seat: number): boolean {
   const player = room.game!.players[seat]!;
   if (player.bot || player.auto) return true;
@@ -450,10 +489,33 @@ function robotSeat(room: RoomState, seat: number): boolean {
   return !member || !member.connected;
 }
 
+/** 在 [min, max] 毫秒里随机，乘上 BOT_DELAY_SCALE。 */
+function randomDelay([min, max]: readonly [number, number]): number {
+  return (min + Math.random() * (max - min)) * BOT_DELAY_SCALE;
+}
+
+/** 这一步的保密延迟：登基阶段 2–6 秒，抢独、表态 1–3 秒；其他阶段 null。 */
+function secrecyDelay(game: GameState): number | null {
+  if (game.stage === "abdicate") return randomDelay(ABDICATE_DELAY_MS);
+  if (game.stage === "grab" || game.stage === "declare") return randomDelay(DECLARE_DELAY_MS);
+  return null;
+}
+
+/**
+ * 真人只有一个选择、程序替他做的：不能登基只能让位（勘误 K6：等随机 2–6 秒，界面照样显示「让位」）；
+ * 造反选项关着时，不是侍卫的人表态只有「不造反」。返回那个唯一的操作，否则 null。
+ */
+function soleCommand(game: GameState, seat: number): GameCommand | null {
+  if (game.stage !== "abdicate" && game.stage !== "declare") return null;
+  const options = legalCommands(game, game.players[seat]!.id);
+  return options.length === 1 ? options[0]! : null;
+}
+
 /**
  * 每次对局变化后重新安排计时：
  * - 真人：这个决定点开始后 stepSeconds 秒内没决定就套用默认动作（timeoutTurn）；
- * - 机器人、托管、离线的人：随机等一会儿（离线代打等 OFFLINE_TURN_MS）出手。
+ * - 人机、托管、离线的人：随机等一会儿出手（离线代打至少等 OFFLINE_TURN_MS）；
+ * - 只有一个选择的真人：随机等 2–6 秒（让位）/ 1–3 秒（表态）后程序替他选，不算超时。
  */
 function updateTurnTimer(room: RoomState): void {
   const game = room.game;
@@ -466,10 +528,12 @@ function updateTurnTimer(room: RoomState): void {
     room.stageKey = key;
     room.stageStartedAt = Date.now();
     clearTurnTimer(room);
+    clearQueued(room);
   }
   const pending = pendingSeats(game);
   const robots = pending.filter((seat) => robotSeat(room, seat));
   const humans = pending.filter((seat) => !robots.includes(seat));
+  const sole = new Map(humans.map((seat) => [seat, soleCommand(game, seat)] as const).filter((entry): entry is [number, GameCommand] => entry[1] !== null));
 
   room.seatDeadlines = new Map(humans.map((seat) => [seat, seatDeadline(room, game, seat)]));
   if (humans.length === 0) clearTurnTimer(room);
@@ -478,19 +542,24 @@ function updateTurnTimer(room: RoomState): void {
     if (room.turn?.key !== key || room.turn.deadline !== earliest) setTurnDeadline(room, earliest, key);
   }
 
+  const automatic = [...robots, ...sole.keys()];
   for (const [timerId, timer] of room.botTimers) {
     const [timerKeyPart, seatPart] = timerId.split("#");
-    if (timerKeyPart !== key || !robots.includes(Number(seatPart))) {
+    if (timerKeyPart !== key || !automatic.includes(Number(seatPart))) {
       clearTimeout(timer);
       room.botTimers.delete(timerId);
     }
   }
-  for (const seat of robots) {
+  for (const seat of automatic) {
     const timerId = `${key}#${seat}`;
     if (room.botTimers.has(timerId)) continue;
     const player = game.players[seat]!;
-    const delay = player.bot || player.auto ? BOT_MIN_MS + Math.random() * (BOT_MAX_MS - BOT_MIN_MS) : OFFLINE_TURN_MS;
-    const timer = setTimeout(() => runRobot(room, seat, key, timerId), delay);
+    const secrecy = secrecyDelay(game);
+    let delay: number;
+    if (sole.has(seat)) delay = secrecy ?? 0;
+    else if (player.bot || player.auto) delay = secrecy ?? (BOT_MIN_MS + Math.random() * (BOT_MAX_MS - BOT_MIN_MS)) * BOT_DELAY_SCALE;
+    else delay = Math.max(OFFLINE_TURN_MS, secrecy ?? 0);
+    const timer = setTimeout(() => runRobot(room, seat, key, timerId, sole.get(seat)), delay);
     timer.unref();
     room.botTimers.set(timerId, timer);
   }
@@ -502,31 +571,76 @@ function seatDeadline(room: RoomState, game: GameState, _seat: number): number {
   return room.stageStartedAt + stepMs(game);
 }
 
-function runRobot(room: RoomState, seat: number, key: string, timerId: string): void {
+/** 应用一个操作并按情况推送：公开状态没变（同时选阶段里的一个选择）时只推给 onlyTo（或谁都不推）。 */
+function commitGame(room: RoomState, next: GameState, onlyTo: string | null): void {
+  const publicChange = next.version !== room.game?.version;
+  room.game = next;
+  afterGameChange(room);
+  if (publicChange) emitRoomUpdate(room);
+  else if (onlyTo) emitRoomUpdate(room, onlyTo);
+}
+
+function runRobot(room: RoomState, seat: number, key: string, timerId: string, sole?: GameCommand): void {
   room.botTimers.delete(timerId);
   const game = room.game;
   if (rooms.get(room.code) !== room || !game || game.phase === "finished" || timerKey(game) !== key) return;
-  if (!pendingSeats(game).includes(seat) || !robotSeat(room, seat)) return;
+  if (!pendingSeats(game).includes(seat)) return;
+  const id = game.players[seat]!.id;
+  const member = room.members.find((candidate) => candidate.playerId === id);
+  let next: GameState;
   try {
-    // 机器人只看这个座位自己能看到的信息
-    const id = game.players[seat]!.id;
-    room.game = applyCommand(game, id, botCommand(redactGameForViewer(game, id), seat));
+    if (sole && !robotSeat(room, seat)) {
+      // 真人只有一个选择：程序替他选（不算超时）。
+      next = applyCommand(game, id, sole);
+    } else {
+      if (!robotSeat(room, seat)) return;
+      // 人机只看这个座位自己能看到的信息。
+      next = applyCommand(game, id, botCommand(redactGameForViewer(game, id), seat));
+    }
   } catch (error) {
-    console.error("机器人出错", error);
-    room.game = timeoutTurn(game);
+    console.error("人机出错", error);
+    next = timeoutTurn(game, [seat]);
   }
-  afterGameChange(room);
-  emitRoomUpdate(room);
+  commitGame(room, next, member?.connected ? member.id : null);
+}
+
+/** 抢独、表态：真人的提交随机延迟 1–3 秒才生效。到点（或这一步超时）时应用。 */
+function applyQueued(room: RoomState, seat: number): void {
+  const entry = room.queued.get(seat);
+  if (!entry) return;
+  clearTimeout(entry.timer);
+  room.queued.delete(seat);
+  const game = room.game;
+  if (rooms.get(room.code) !== room || !game || game.phase === "finished" || timerKey(game) !== entry.key) return;
+  if (!pendingSeats(game).includes(seat)) return;
+  const id = game.players[seat]!.id;
+  const member = room.members.find((candidate) => candidate.playerId === id);
+  let next: GameState;
+  try {
+    next = applyCommand(game, id, entry.command);
+  } catch (error) {
+    console.error("延迟提交出错", error);
+    return;
+  }
+  commitGame(room, next, member?.connected ? member.id : null);
 }
 
 function expireTurn(room: RoomState): void {
   if (rooms.get(room.code) !== room || !room.game || room.game.phase === "finished") return;
   const now = Date.now() + 30;
   const due = [...room.seatDeadlines].filter(([, deadline]) => deadline <= now).map(([seat]) => seat);
-  // 只超时到点的真人座位；机器人座位由自己的计时出手。
-  if (due.length > 0) room.game = timeoutTurn(room.game, due);
-  afterGameChange(room);
-  emitRoomUpdate(room);
+  // 已经提交、还在延迟里的选择先生效，不算超时。
+  for (const seat of due) if (room.queued.has(seat)) applyQueued(room, seat);
+  const game = room.game;
+  if (!game || game.phase === "finished") return;
+  const pending = pendingSeats(game);
+  // 只超时到点的真人座位；人机座位由自己的计时出手。
+  const late = due.filter((seat) => pending.includes(seat) && !robotSeat(room, seat));
+  if (late.length > 0) commitGame(room, timeoutTurn(game, late), null);
+  else {
+    afterGameChange(room);
+    emitRoomUpdate(room);
+  }
 }
 
 /** 对局状态变化后：结束则清空聊天并发起继续投票，否则更新计时。 */
@@ -542,7 +656,7 @@ function afterGameChange(room: RoomState): void {
 }
 
 /** 种子用服务端的安全随机数生成；牌在服务端洗，不发给浏览器。 */
-/** 真人坐前面的座位，空座由机器人补满 3 个（createGame 里再随机排座位）。 */
+/** 真人坐前面的座位，空座由人机补满 5 个（createGame 里再随机排座位）。 */
 function newGame(room: RoomState, seed = randomInt(2 ** 32 - 1)): GameState {
   const humans = room.members.map((member) => ({ id: member.playerId, name: member.name }));
   const names = BOT_NAMES.filter((name) => !humans.some((human) => human.name === name));
@@ -698,6 +812,7 @@ io.on("connection", (socket) => {
       stageStartedAt: Date.now(),
       botTimers: new Map(),
       seatDeadlines: new Map(),
+      queued: new Map(),
       status: "waiting",
       ownerId: socket.id,
       members: [{ id: socket.id, playerId: "p1", name: normalizeName(payload.name)!, isHost: true, connected: true }],
@@ -977,11 +1092,28 @@ io.on("connection", (socket) => {
     }
 
     try {
-      room.game = applyCommand(room.game, seatOf(room, socket.id), command);
-      afterGameChange(room);
-      const roomSnapshot = snapshot(room, socket.id);
-      ack({ ok: true, data: roomSnapshot });
-      emitRoomUpdate(room);
+      const game = room.game;
+      const playerId = seatOf(room, socket.id);
+      const seat = game.players.findIndex((player) => player.id === playerId);
+      if ((command?.type === "GRAB" || command?.type === "DECLARE") && BOT_DELAY_SCALE > 0) {
+        // 抢独、表态：先检查合法，再随机延迟 1–3 秒才生效（只有自己看得到「已提交」）。
+        if (room.queued.has(seat)) throw new Error("你已经选过了。");
+        const legal = legalCommands(redactGameForViewer(game, playerId), playerId);
+        if (!legal.some((candidate) => JSON.stringify(candidate) === JSON.stringify({ type: command.type, ...(command.type === "GRAB" ? { grab: command.grab === true } : { choice: command.choice }) }))) {
+          // 让引擎给出具体的中文原因。
+          applyCommand(game, playerId, command);
+          throw new Error("现在不能这样选。");
+        }
+        const key = timerKey(game);
+        const timer = setTimeout(() => applyQueued(room, seat), randomDelay(DECLARE_DELAY_MS));
+        timer.unref();
+        room.queued.set(seat, { command, timer, key });
+        ack({ ok: true, data: snapshot(room, socket.id) });
+        emitRoomUpdate(room, socket.id);
+        return;
+      }
+      commitGame(room, applyCommand(game, playerId, command), socket.id);
+      ack({ ok: true, data: snapshot(room, socket.id) });
     } catch (error) {
       const message = error instanceof Error ? error.message : "无法执行这个行动。";
       ack({ ok: false, error: message });
