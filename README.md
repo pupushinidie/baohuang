@@ -10,7 +10,7 @@
 |---|---|
 | `npm install` | 装依赖 |
 | `npm run dev` | 服务器 3020 + 网页 5291（Vite 代理 socket）。另起一套：`SERVER_PORT=3120 WEB_PORT=5391 npm run dev`（服务器也认 `PORT`） |
-| `npm test` | 90 个测试（规则书 T1–T17、勘误 K1–K7、变体 V1–V12、7 种开房选项各 300 局随机对局、预览局面、出法对拍、服务器流程 / 保密 / 抓包 / 观战 / 挤登录），约 40 秒 |
+| `npm test` | 94 个测试（规则书 T1–T17、勘误 K1–K7、变体 V1–V12、7 种开房选项各 300 局随机对局、预览局面、出法对拍、服务器流程 / 保密 / 抓包 / 观战 / 挤登录），约 40 秒 |
 | `npm run typecheck` | 规则包、测试代码、服务器、网页的类型检查 |
 | `BASE_PATH=/baohuang/ npm run build` | 生产构建 |
 | `npm run build:game` | 只构建规则包（服务器和脚本读 `packages/game/dist`；改了 packages/game 先跑这个再测服务器） |
@@ -39,7 +39,7 @@
 | `packages/game/src/bot.ts` | 人机**占位**（随机合法、暗保 / 不造反），人机阶段整个替换 |
 | `packages/game/test/` | 引擎测试；`test/acceptance/` 归规则核对（背靠背写，引擎不改） |
 | `apps/server/src/index.ts` | Socket.IO 房间服务器（建房、加入、开局补人机、托管、离线代打、观战、挤登录、管理员解散、保密延迟） |
-| `apps/server/test/` | 服务器测试：`room`（流程、超时托管、离线回座）、`secrecy`（保密设定）、`spy`（抓包）、`spectate`、`kickSession`；`bots.test.ts` 归人机阶段 |
+| `apps/server/test/` | 服务器测试：`room`（流程、超时托管、离线回座）、`actions`（每种操作经过服务器）、`secrecy`（保密设定）、`spy`（抓包）、`spectate`、`kickSession`；`bots.test.ts` 归人机阶段 |
 | `apps/web/` | Vite + React 网页（界面阶段负责；现在是调试牌桌） |
 | `art/`、`apps/web/public/art/` | 美术（`art/spec.md` 是规格表）；牌面是掼蛋的像素牌 `apps/web/public/cards-pixel/` |
 | `scripts/` | 陪玩、抓包、重连脚本 |
