@@ -1,0 +1,90 @@
+{"time": "2026-10-10 18:43:12", "name": "bao-tag-s711", "endpoint": "/create-image-pixflux", "usage": {"type": "generations", "generations": 1.0}, "seconds": 18.6}
+{"time": "2026-10-10 18:43:13", "name": "result-win-s721", "endpoint": "/create-image-pixflux", "usage": {"type": "generations", "generations": 1.0}, "seconds": 19.0}
+{"time": "2026-10-10 18:43:15", "name": "cover-crown-s803", "endpoint": "/create-image-pixflux", "usage": {"type": "generations", "generations": 1.0}, "seconds": 21.0}
+{"time": "2026-10-10 18:43:28", "name": "bao-show-s701", "endpoint": "/create-image-pixflux", "usage": {"type": "generations", "generations": 1.0}, "seconds": 34.5}
+{"time": "2026-10-10 18:43:32", "name": "cover-throne-s801", "endpoint": "/create-image-pixflux", "usage": {"type": "generations", "generations": 1.0}, "seconds": 38.3}
+{"time": "2026-10-10 18:43:40", "name": "cover-gate-s805", "endpoint": "/create-image-pixflux", "usage": {"type": "generations", "generations": 1.0}, "seconds": 45.9}
+{"time": "2026-10-10 18:43:48", "name": "bao-tag-s712", "endpoint": "/create-image-pixflux", "usage": {"type": "generations", "generations": 1.0}, "seconds": 35.6}
+{"time": "2026-10-10 18:43:51", "name": "scene-day-a-s11", "endpoint": "/create-image-pixen", "usage": {"type": "generations", "generations": 1.0}, "seconds": 57.7}
+{"time": "2026-10-10 18:43:56", "name": "scene-night-b-s61", "endpoint": "/create-image-pixen", "usage": {"type": "generations", "generations": 1.0}, "seconds": 61.9}
+{"time": "2026-10-10 18:43:58", "name": "cover-throne-s802", "endpoint": "/create-image-pixflux", "usage": {"type": "generations", "generations": 1.0}, "seconds": 26.1}
+{"time": "2026-10-10 18:43:58", "name": "scene-night-a-s11", "endpoint": "/create-image-pixen", "usage": {"type": "generations", "generations": 1.0}, "seconds": 64.4}
+{"time": "2026-10-10 18:43:59", "name": "scene-day-b-s61", "endpoint": "/create-image-pixen", "usage": {"type": "generations", "generations": 1.0}, "seconds": 65.4}
+{"time": "2026-10-10 18:44:12", "name": "cover-gate-s806", "endpoint": "/create-image-pixflux", "usage": {"type": "generations", "generations": 1.0}, "seconds": 32.8}
+{"time": "2026-10-10 18:44:19", "name": "cover-crown-s804", "endpoint": "/create-image-pixflux", "usage": {"type": "generations", "generations": 1.0}, "seconds": 64.7}
+{"time": "2026-10-10 18:44:24", "name": "bao-show-s702", "endpoint": "/create-image-pixflux", "usage": {"type": "generations", "generations": 1.0}, "seconds": 56.1}
+{"time": "2026-10-10 18:44:26", "name": "result-win-s722", "endpoint": "/create-image-pixflux", "usage": {"type": "generations", "generations": 1.0}, "seconds": 73.3}
+{"time": "2026-10-10 18:44:30", "name": "seat-crest-s741", "endpoint": "/create-image-pixflux", "usage": {"type": "generations", "generations": 1.0}, "seconds": 17.3}
+{"time": "2026-10-10 18:44:44", "name": "scene-night-b-s62", "endpoint": "/create-image-pixen", "usage": {"type": "generations", "generations": 1.0}, "seconds": 48.3}
+{"time": "2026-10-10 18:44:45", "name": "bao-tag-s713", "endpoint": "/create-image-pixflux", "usage": {"type": "generations", "generations": 1.0}, "seconds": 56.8}
+{"time": "2026-10-10 18:44:46", "name": "result-win-s723", "endpoint": "/create-image-pixflux", "usage": {"type": "generations", "generations": 1.0}, "seconds": 19.9}
+{"time": "2026-10-10 18:44:54", "name": "seat-crest-s742", "endpoint": "/create-image-pixflux", "usage": {"type": "generations", "generations": 1.0}, "seconds": 24.4}
+{"time": "2026-10-10 18:44:58", "name": "scene-night-a-s23", "endpoint": "/create-image-pixen", "usage": {"type": "generations", "generations": 1.0}, "seconds": 60.1}
+{"time": "2026-10-10 18:44:59", "name": "scene-day-b-s62", "endpoint": "/create-image-pixen", "usage": {"type": "generations", "generations": 1.0}, "seconds": 60.2}
+{"time": "2026-10-10 18:45:05", "name": "bao-show-s703", "endpoint": "/create-image-pixflux", "usage": {"type": "generations", "generations": 1.0}, "seconds": 40.7}
+{"time": "2026-10-10 18:45:13", "name": "seat-crest-s743", "endpoint": "/create-image-pixflux", "usage": {"type": "generations", "generations": 1.0}, "seconds": 19.0}
+{"time": "2026-10-10 18:45:35", "name": "scene-day-a-s23", "endpoint": "/create-image-pixen", "usage": {"type": "generations", "generations": 1.0}, "seconds": 104.0}
+{"time": "2026-10-10 18:46:04", "name": "scene-night-a-s37", "endpoint": "/create-image-pixen", "usage": {"type": "generations", "generations": 1.0}, "seconds": 65.8}
+{"time": "2026-10-10 18:46:05", "name": "scene-night-b-s63", "endpoint": "/create-image-pixen", "usage": {"type": "generations", "generations": 1.0}, "seconds": 80.7}
+{"time": "2026-10-10 18:46:05", "name": "result-lose-s731", "endpoint": "/create-image-pixflux", "usage": {"type": "generations", "generations": 1.0}, "seconds": 127.0}
+{"time": "2026-10-10 18:46:23", "name": "scene-day-b-s63", "endpoint": "/create-image-pixen", "usage": {"type": "generations", "generations": 1.0}, "seconds": 83.6}
+{"time": "2026-10-10 18:46:27", "name": "result-lose-s732", "endpoint": "/create-image-pixflux", "usage": {"type": "generations", "generations": 1.0}, "seconds": 21.7}
+{"time": "2026-10-10 18:46:40", "name": "result-lose-s733", "endpoint": "/create-image-pixflux", "usage": {"type": "generations", "generations": 1.0}, "seconds": 13.5}
+{"time": "2026-10-10 18:47:02", "name": "scene-night-a-s51", "endpoint": "/create-image-pixen", "usage": {"type": "generations", "generations": 1.0}, "seconds": 57.5}
+{"time": "2026-10-10 18:47:11", "name": "scene-day-a-s37", "endpoint": "/create-image-pixen", "usage": {"type": "generations", "generations": 1.0}, "seconds": 95.5}
+{"time": "2026-10-10 18:47:16", "name": "emperor", "endpoint": "/generate-image-v2", "usage": {"type": "generations", "generations": 10.0}, "seconds": 176.4, "status": "completed"}
+{"time": "2026-10-10 18:47:35", "name": "emperor-cn", "endpoint": "/generate-image-v2", "usage": {"type": "generations", "generations": 10.0}, "seconds": 170.4, "status": "completed"}
+{"time": "2026-10-10 18:47:50", "name": "seal", "endpoint": "/generate-image-v2", "usage": {"type": "generations", "generations": 10.0}, "seconds": 156.7, "status": "completed"}
+{"time": "2026-10-10 18:47:55", "name": "guard", "endpoint": "/generate-image-v2", "usage": {"type": "generations", "generations": 10.0}, "seconds": 189.2, "status": "completed"}
+{"time": "2026-10-10 18:47:59", "name": "rebel", "endpoint": "/generate-image-v2", "usage": {"type": "generations", "generations": 10.0}, "seconds": 173.6, "status": "completed"}
+{"time": "2026-10-10 18:48:05", "name": "scene-day-a-s51", "endpoint": "/create-image-pixen", "usage": {"type": "generations", "generations": 1.0}, "seconds": 53.6}
+{"time": "2026-10-10 18:49:20", "name": "av-lantern", "endpoint": "/generate-image-v2", "usage": {"type": "generations", "generations": 10.0}, "seconds": 138.3, "status": "completed"}
+{"time": "2026-10-10 18:49:59", "name": "av-fan", "endpoint": "/generate-image-v2", "usage": {"type": "generations", "generations": 10.0}, "seconds": 163.7, "status": "completed"}
+{"time": "2026-10-10 18:50:10", "name": "av-cloud", "endpoint": "/generate-image-v2", "usage": {"type": "generations", "generations": 10.0}, "seconds": 140.0, "status": "completed"}
+{"time": "2026-10-10 18:50:25", "name": "av-coin", "endpoint": "/generate-image-v2", "usage": {"type": "generations", "generations": 10.0}, "seconds": 149.4, "status": "completed"}
+{"time": "2026-10-10 18:50:29", "name": "huang-crown", "endpoint": "/generate-image-v2", "usage": {"type": "generations", "generations": 10.0}, "seconds": 150.5, "status": "completed"}
+{"time": "2026-10-10 18:50:41", "name": "huang-jester", "endpoint": "/generate-image-v2", "usage": {"type": "generations", "generations": 10.0}, "seconds": 155.9, "status": "completed"}
+{"time": "2026-10-10 18:50:42", "name": "av-tea", "endpoint": "/generate-image-v2", "usage": {"type": "generations", "generations": 10.0}, "seconds": 187.2, "status": "completed"}
+{"time": "2026-10-10 18:51:01", "name": "fx-rebel", "endpoint": "/generate-image-v2", "usage": {"type": "generations", "generations": 15.0}, "seconds": 260.4, "status": "completed"}
+{"time": "2026-10-10 18:51:16", "name": "fx-emperor", "endpoint": "/generate-image-v2", "usage": {"type": "generations", "generations": 15.0}, "seconds": 311.2, "status": "completed"}
+{"time": "2026-10-10 18:51:57", "name": "fx-guard", "endpoint": "/generate-image-v2", "usage": {"type": "generations", "generations": 15.0}, "seconds": 334.6, "status": "completed"}
+{"time": "2026-10-10 18:55:23", "name": "result-win-free-s851", "endpoint": "/create-image-pixflux", "usage": {"type": "generations", "generations": 1.0}, "seconds": 29.0}
+{"time": "2026-10-10 18:55:27", "name": "bao-show-free-s841", "endpoint": "/create-image-pixflux", "usage": {"type": "generations", "generations": 1.0}, "seconds": 33.4}
+{"time": "2026-10-10 18:55:32", "name": "result-win-s821-k90", "endpoint": "/create-image-pixflux", "usage": {"type": "generations", "generations": 1.0}, "seconds": 37.6}
+{"time": "2026-10-10 18:55:33", "name": "result-lose-s831-k90", "endpoint": "/create-image-pixflux", "usage": {"type": "generations", "generations": 1.0}, "seconds": 38.7}
+{"time": "2026-10-10 18:55:34", "name": "bao-show-s801-k90", "endpoint": "/create-image-pixflux", "usage": {"type": "generations", "generations": 1.0}, "seconds": 39.9}
+{"time": "2026-10-10 18:55:35", "name": "result-lose-free-s861", "endpoint": "/create-image-pixflux", "usage": {"type": "generations", "generations": 1.0}, "seconds": 40.6}
+{"time": "2026-10-10 18:55:40", "name": "bao-tag-s811-k90", "endpoint": "/create-image-pixflux", "usage": {"type": "generations", "generations": 1.0}, "seconds": 46.5}
+{"time": "2026-10-10 18:55:54", "name": "result-win-s822-k160", "endpoint": "/create-image-pixflux", "usage": {"type": "generations", "generations": 1.0}, "seconds": 22.9}
+{"time": "2026-10-10 18:55:55", "name": "bao-show-free-s842", "endpoint": "/create-image-pixflux", "usage": {"type": "generations", "generations": 1.0}, "seconds": 27.3}
+{"time": "2026-10-10 18:55:55", "name": "result-lose-free-s862", "endpoint": "/create-image-pixflux", "usage": {"type": "generations", "generations": 1.0}, "seconds": 20.6}
+{"time": "2026-10-10 18:55:56", "name": "fx-rebel-s1", "endpoint": "/animate-with-text-v3", "usage": {"type": "usd", "usd": 0.0}, "seconds": 62.1, "status": "failed"}
+{"time": "2026-10-10 18:56:01", "name": "bao-tag-s812-k160", "endpoint": "/create-image-pixflux", "usage": {"type": "generations", "generations": 1.0}, "seconds": 21.0}
+{"time": "2026-10-10 18:56:06", "name": "result-win-free-s852", "endpoint": "/create-image-pixflux", "usage": {"type": "generations", "generations": 1.0}, "seconds": 43.3}
+{"time": "2026-10-10 18:56:11", "name": "seat-crest-free-s871", "endpoint": "/create-image-pixflux", "usage": {"type": "generations", "generations": 1.0}, "seconds": 16.3}
+{"time": "2026-10-10 18:56:21", "name": "bao-tag-s813-k160", "endpoint": "/create-image-pixflux", "usage": {"type": "generations", "generations": 1.0}, "seconds": 19.8}
+{"time": "2026-10-10 18:56:22", "name": "bao-show-s802-k160", "endpoint": "/create-image-pixflux", "usage": {"type": "generations", "generations": 1.0}, "seconds": 47.6}
+{"time": "2026-10-10 18:56:23", "name": "result-lose-s832-k160", "endpoint": "/create-image-pixflux", "usage": {"type": "generations", "generations": 1.0}, "seconds": 50.4}
+{"time": "2026-10-10 18:56:29", "name": "seat-crest-free-s872", "endpoint": "/create-image-pixflux", "usage": {"type": "generations", "generations": 1.0}, "seconds": 18.1}
+{"time": "2026-10-10 18:56:34", "name": "result-win-free-s853", "endpoint": "/create-image-pixflux", "usage": {"type": "generations", "generations": 1.0}, "seconds": 28.2}
+{"time": "2026-10-10 18:56:36", "name": "cover-table-s881", "endpoint": "/create-image-pixflux", "usage": {"type": "generations", "generations": 1.0}, "seconds": 41.3}
+{"time": "2026-10-10 18:56:43", "name": "fx-crown-s1", "endpoint": "/animate-with-text-v3", "usage": {"type": "generations", "generations": 1.0}, "seconds": 109.0, "status": "completed"}
+{"time": "2026-10-10 18:56:44", "name": "fx-guard-s1", "endpoint": "/animate-with-text-v3", "usage": {"type": "generations", "generations": 1.0}, "seconds": 110.2, "status": "completed"}
+{"time": "2026-10-10 18:56:49", "name": "seat-crest-free-s873", "endpoint": "/create-image-pixflux", "usage": {"type": "generations", "generations": 1.0}, "seconds": 20.4}
+{"time": "2026-10-10 18:57:00", "name": "bao-show-s803-k160", "endpoint": "/create-image-pixflux", "usage": {"type": "generations", "generations": 1.0}, "seconds": 38.6}
+{"time": "2026-10-10 18:57:05", "name": "cover-hall-s891", "endpoint": "/create-image-pixen", "usage": {"type": "generations", "generations": 1.0}, "seconds": 70.0}
+{"time": "2026-10-10 18:57:07", "name": "cover-table-s882", "endpoint": "/create-image-pixflux", "usage": {"type": "generations", "generations": 1.0}, "seconds": 31.4}
+{"time": "2026-10-10 18:57:42", "name": "cover-table-s883", "endpoint": "/create-image-pixflux", "usage": {"type": "generations", "generations": 1.0}, "seconds": 34.1}
+{"time": "2026-10-10 18:58:01", "name": "cover-hall-s892", "endpoint": "/create-image-pixen", "usage": {"type": "generations", "generations": 1.0}, "seconds": 55.6}
+{"time": "2026-10-10 18:58:09", "name": "crown16", "endpoint": "/generate-image-v2", "usage": {"type": "generations", "generations": 10.0}, "seconds": 132.5, "status": "completed"}
+{"time": "2026-10-10 18:58:38", "name": "fx-guard-s2", "endpoint": "/animate-with-text-v3", "usage": {"type": "generations", "generations": 1.0}, "seconds": 113.7, "status": "completed"}
+{"time": "2026-10-10 18:58:41", "name": "cloud-scroll", "endpoint": "/generate-image-v2", "usage": {"type": "generations", "generations": 10.0}, "seconds": 138.3, "status": "completed"}
+{"time": "2026-10-10 18:58:43", "name": "cloud-corner", "endpoint": "/generate-image-v2", "usage": {"type": "generations", "generations": 10.0}, "seconds": 142.1, "status": "completed"}
+{"time": "2026-10-10 18:59:05", "name": "cover-hall-s893", "endpoint": "/create-image-pixen", "usage": {"type": "generations", "generations": 1.0}, "seconds": 64.0}
+{"time": "2026-10-10 19:00:27", "name": "fx-guard-s3", "endpoint": "/animate-with-text-v3", "usage": {"type": "generations", "generations": 1.0}, "seconds": 109.0, "status": "completed"}
+{"time": "2026-10-10 19:01:21", "name": "fx-crown-s2", "endpoint": "/animate-with-text-v3", "usage": {"type": "generations", "generations": 1.0}, "seconds": 277.9, "status": "completed"}
+{"time": "2026-10-10 19:02:56", "name": "fx-crown-s3", "endpoint": "/animate-with-text-v3", "usage": {"type": "generations", "generations": 1.0}, "seconds": 95.1, "status": "completed"}
+{"time": "2026-10-10 19:06:37", "name": "fx-rebel-s1", "endpoint": "/animate-with-text-v3", "usage": {"type": "generations", "generations": 1.0}, "seconds": 132.6, "status": "completed"}
+{"time": "2026-10-10 19:08:07", "name": "fx-rebel-s2", "endpoint": "/animate-with-text-v3", "usage": {"type": "generations", "generations": 1.0}, "seconds": 90.8, "status": "completed"}
+{"time": "2026-10-10 19:08:59", "name": "seal42", "endpoint": "/generate-image-v2", "usage": {"type": "generations", "generations": 15.0}, "seconds": 275.2, "status": "completed"}
+{"time": "2026-10-10 19:10:04", "name": "fx-rebel-s3", "endpoint": "/animate-with-text-v3", "usage": {"type": "generations", "generations": 1.0}, "seconds": 116.6, "status": "completed"}

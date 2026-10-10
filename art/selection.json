@@ -1,0 +1,243 @@
+{
+  "_说明": "正式美术定稿（2026-10-10，美术 agent 自查自选）。候选在 art/out/r1、r2、r3（gitignore）；export.py 按这里导出到 art/out/final/。值的写法：'组:序号' 是 v2 候选（r1 默认，'r2/组:序号' 指第二轮），路径相对 art/out/。",
+  "scene-night.png": {
+    "pick": "r1/scenes/scene-night-a-s11.png",
+    "alts": [
+      "r1/scenes/scene-night-a-s51.png",
+      "r1/scenes/scene-night-b-s61.png",
+      "r1/scenes/scene-night-a-s23.png"
+    ]
+  },
+  "scene-day.png": {
+    "pick": "r1/scenes/scene-day-a-s11.png",
+    "alts": [
+      "r1/scenes/scene-day-a-s51.png",
+      "r1/scenes/scene-day-b-s61.png",
+      "r1/scenes/scene-day-a-s37.png"
+    ]
+  },
+  "card-huang.png": {
+    "pick": "huang-jester:13",
+    "field": "gold",
+    "alts": [
+      "huang-jester:49",
+      "huang-jester:15",
+      "huang-crown:39"
+    ]
+  },
+  "role-emperor.png": {
+    "pick": "emperor:2",
+    "alts": [
+      "emperor:3",
+      "emperor:36",
+      "emperor-cn:0"
+    ]
+  },
+  "role-guard.png": {
+    "pick": "guard:21",
+    "alts": [
+      "guard:2",
+      "guard:9",
+      "guard:44"
+    ]
+  },
+  "role-rebel.png": {
+    "pick": "rebel:0",
+    "alts": [
+      "rebel:18",
+      "rebel:33",
+      "rebel:39"
+    ]
+  },
+  "role-solo.png": {
+    "pick": "seal:49",
+    "char": "独，Fusion Pixel 12px 1 倍，代码画",
+    "alts": [
+      "seal:21",
+      "seal:59",
+      "seal:15"
+    ]
+  },
+  "mark-bao.png": {
+    "pick": "simple/mark-bao.png",
+    "note": "文字标记，代码画（spec：不让模型写字）"
+  },
+  "mark-tehua.png": {
+    "pick": "simple/mark-tehua.png",
+    "note": "同上"
+  },
+  "rank-1.png": {
+    "pick": "simple/rank-1.png",
+    "note": "名次字，代码画"
+  },
+  "rank-2.png": {
+    "pick": "simple/rank-2.png"
+  },
+  "rank-3.png": {
+    "pick": "simple/rank-3.png"
+  },
+  "rank-4.png": {
+    "pick": "simple/rank-4.png"
+  },
+  "rank-5.png": {
+    "pick": "simple/rank-5.png"
+  },
+  "bao-show.png": {
+    "pick": "r2/flux/bao-show-s801-k90.png",
+    "alts": [
+      "r2/flux/bao-show-s803-k160.png",
+      "r1/flux/bao-show-s701.png"
+    ]
+  },
+  "bao-tag.png": {
+    "pick": "r2/flux/bao-tag-s813-k160.png",
+    "alts": [
+      "r2/flux/bao-tag-s812-k160.png",
+      "r2/flux/bao-tag-s811-k90.png"
+    ]
+  },
+  "avatar-0.png": {
+    "pick": "av-lantern:25",
+    "alts": [
+      "av-lantern:1",
+      "av-lantern:13",
+      "av-lantern:57"
+    ]
+  },
+  "avatar-1.png": {
+    "pick": "av-fan:0",
+    "alts": [
+      "av-fan:9",
+      "av-fan:49",
+      "av-fan:62"
+    ]
+  },
+  "avatar-2.png": {
+    "pick": "av-tea:1",
+    "alts": [
+      "av-tea:5",
+      "av-tea:9",
+      "av-tea:13"
+    ]
+  },
+  "avatar-3.png": {
+    "pick": "av-cloud:2",
+    "alts": [
+      "av-cloud:12",
+      "av-cloud:19",
+      "av-cloud:0"
+    ]
+  },
+  "avatar-4.png": {
+    "pick": "av-coin:3",
+    "alts": [
+      "av-coin:12",
+      "av-coin:19",
+      "av-coin:35"
+    ]
+  },
+  "fx-crown.png": {
+    "pick": "r2/anim/fx-crown/s1",
+    "first": "fx-emperor:0",
+    "sparkle": true,
+    "bob": [
+      0,
+      -1,
+      -2,
+      -1
+    ],
+    "alts": [
+      "r2/anim/fx-crown/s2",
+      "r2/anim/fx-crown/s3",
+      "code"
+    ]
+  },
+  "fx-guard.png": {
+    "pick": "r2/anim/fx-guard/s1",
+    "first": "fx-guard:25",
+    "sparkle": true,
+    "bob": [
+      0,
+      -1,
+      -2,
+      -1
+    ],
+    "alts": [
+      "r2/anim/fx-guard/s2",
+      "r2/anim/fx-guard/s3",
+      "code"
+    ]
+  },
+  "fx-rebel.png": {
+    "pick": "wave",
+    "first": "fx-rebel:0",
+    "amp": 3.2,
+    "note": "PixelLab 动画 3 个种子旗面几乎不动（变化 2%），改成代码按列波浪",
+    "alts": [
+      "r2/anim/fx-rebel/s1",
+      "r2/anim/fx-rebel/s2",
+      "r2/anim/fx-rebel/s3"
+    ]
+  },
+  "fx-solo.png": {
+    "pick": "code",
+    "first": "role-solo",
+    "note": "印章不交给模型动（字会变形）：定稿的独字印章 + 代码浮动和星点"
+  },
+  "result-win.png": {
+    "pick": "r2/flux/result-win-s822-k160.png",
+    "alts": [
+      "r2/flux/result-win-free-s852.png",
+      "r2/flux/result-win-free-s853.png"
+    ],
+    "patch": [
+      98,
+      128,
+      6,
+      25,
+      44
+    ]
+  },
+  "result-lose.png": {
+    "pick": "r2/flux/result-lose-s832-k160.png",
+    "alts": [
+      "r2/flux/result-lose-free-s862.png",
+      "r2/flux/result-lose-free-s861.png"
+    ]
+  },
+  "seat-crest.png": {
+    "pick": [
+      "r2/crown16:5",
+      "r2/cloud-scroll:6"
+    ],
+    "alts": [
+      [
+        "r2/crown16:25",
+        "r2/cloud-scroll:10"
+      ],
+      [
+        "r2/crown16:1",
+        "r2/cloud-scroll:0"
+      ],
+      [
+        "r2/crown16:33",
+        "r2/cloud-scroll:18"
+      ]
+    ]
+  },
+  "icon.png": {
+    "pick": "emperor:2",
+    "alts": [
+      "emperor:3",
+      "emperor:14"
+    ]
+  },
+  "cover": {
+    "pick": "covers/cover-hall-892.png",
+    "alts": [
+      "covers/cover-scene-11.png",
+      "covers/cover-gate-805.png",
+      "covers/cover-crown-804.png"
+    ]
+  }
+}
