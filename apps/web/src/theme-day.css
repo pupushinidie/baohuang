@@ -6,7 +6,7 @@
 :root[data-theme="day"] .app-shell * { scrollbar-color: #aebad0 var(--bg); }
 
 
-/* 牌桌（农家院场景）白天也保持原样；桌上深色小牌子（名牌、底牌倍数条、操作条、状态条）里的字用夜间的浅色，
+/* 牌桌（金銮殿场景）白天也保持原样；桌上深色小牌子（名牌、信息条、操作条、状态条）里的字用夜间的浅色，
    只有桌上的按钮（白天是浅底）用白天的深色字 */
 :root[data-theme="day"] .bh-table {
   --text: #eef3fb;

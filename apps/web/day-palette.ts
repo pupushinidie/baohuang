@@ -1,12 +1,12 @@
 import type { DayPalette } from "./day-theme";
 
 /**
- * 白天版调色表（保皇；从斗地主继承的夜色蓝灰，界面阶段按金銮殿配色改）。
+ * 白天版调色表（保皇）。首页、等候房间、侧栏、弹窗用全站的夜色蓝灰 → 白底；牌桌（金銮殿）在 keep 里保持原样。
  * 深色底、面板、按钮 → 白底浅色；深色像素描边保留；浅色字 → 深色字。
- * 牌桌（农家院场景、牌）和桌上的深色小牌子（名牌、底牌倍数条、操作条……）、座位色、按钮里的金色红色这些内容色不换。
+ * 牌桌（金銮殿场景、牌）和桌上的深色小牌子（名牌、信息条、操作条……）、座位色、按钮里的金色红色这些内容色不换。
  */
 export const palette: DayPalette = {
-  files: ["app-pixel.css", "baohuang.css"],
+  files: ["app-pixel.css", "home.css", "baohuang.css"],
   colors: {
     "#0c1120": "#ffffff", // 底色、输入框
     "#101729": "#f8f9fc", // 底色的棋盘纹
@@ -39,10 +39,15 @@ export const palette: DayPalette = {
     "calc(var(--px) * 2) calc(var(--px) * 2) 0 var(--edge)": "calc(var(--px) * 2) calc(var(--px) * 2) 0 #f0d890",
   },
   keep: [
-    "bh-table", "bh-top", "bh-bottom", "bh-multi", "bh-hand-no", "bh-tracker-pop", "bh-plate", "bh-avatar-box", "bh-chip", "bh-role",
-    "bh-count", "bh-clock", "bh-alert", "bh-bubble", "bh-open-hand", "bh-open-text", "bh-plays", "bh-play", "bh-play-cards", "bh-play-label", "bh-pass",
-    "bh-fx", "bh-center", "bh-actions", "bh-actions-time", "bh-note", "bh-mine", "bh-hand", "bh-banner", "bh-auto-banner", "bh-status-mini", "bh-card",
+    // 牌桌（金銮殿场景）和桌上的深色牌子、按钮、特效：白天也保持原样（白天只换场景图）
+    "bh-table", "bh-opps", "bh-opp", "bh-plate", "bh-crest", "bh-avatar-box", "bh-avatar", "bh-roles", "bh-huang-mini", "bh-plate-info",
+    "bh-plate-line", "bh-score", "bh-count", "bh-place", "bh-tags", "bh-chip", "bh-clock", "bh-play", "bh-play-cards", "bh-play-label",
+    "bh-pass", "bh-mid", "bh-info", "bh-info-row", "bh-multi", "bh-guard-tag", "bh-tag-frame", "bh-info-text", "bh-tie", "bh-center",
+    "bh-actions", "bh-wait", "bh-note", "bh-status", "bh-timer", "bh-mine", "bh-hand", "bh-columns", "bh-col", "bh-col-head",
+    "bh-col-cards", "bh-hcard", "bh-mark", "bh-hand-empty", "bh-fx", "bh-banner", "bh-bao-show", "bh-bao-frame", "bh-bao-slot",
+    "bh-bao-fourth", "bh-auto-banner", "bh-card", "bh-ribbon",
   ],
+
   textVarColors: {
     "--gold": "#94650a",
     "--gold-2": "#94650a",

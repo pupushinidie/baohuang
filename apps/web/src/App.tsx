@@ -411,7 +411,7 @@ function App() {
   );
 }
 
-function Brand() {
+export function Brand() {
   return (
     <a className="brand" href={import.meta.env.BASE_URL} aria-label="保皇首页">
       <span className="brand-mark" aria-hidden="true"><i /><i /><i /></span>
@@ -420,7 +420,7 @@ function Brand() {
   );
 }
 
-function ConnectionStatus({ connected }: { connected: boolean }) {
+export function ConnectionStatus({ connected }: { connected: boolean }) {
   return (
     <div className={connected ? "connection-status online" : "connection-status"}>
       <span className="connection-dot" />
@@ -471,7 +471,7 @@ function OptionsPanel({ room }: { room: LobbyRoomSnapshot }) {
   );
 }
 
-function RoomView({
+export function RoomView({
   room,
   busy,
   error,

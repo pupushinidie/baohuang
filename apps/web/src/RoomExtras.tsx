@@ -11,7 +11,7 @@ export function roomRole(room: LobbyRoomSnapshot) {
 /** 这款游戏有没有藏起来的信息（手牌等）；没有的话不显示「观战看手牌」。 */
 const HIDDEN_INFO = true;
 /** 藏起来的是什么（显示在开关上）。 */
-const SECRET = "手牌";
+const SECRET = "手牌和身份";
 
 const ALL_OPTIONS: { key: keyof RoomAccess; label: string; hint: string }[] = [
   { key: "allowSpectators", label: "允许观战", hint: "有房间码、或者从首页列表都能进来看" },
