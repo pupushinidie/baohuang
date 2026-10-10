@@ -1,16 +1,19 @@
 #!/usr/bin/env node
 /**
- * 斗地主陪玩脚本（本地联调、线上在服务器上连 localhost 测试用）。先 npm run build:game（规则包的 dist）。
- * 服务器自己会给空座位补人机；这个脚本是用来模拟「真人」连进房间的（测重连、抢座位、多人房间）。
+ * 保皇陪玩脚本（本地联调、线上在服务器上连 localhost 测试用）。先 npm run build:game（规则包的 dist）。
+ * 服务器自己会在开局时给空座位补人机；这个脚本是用来模拟「真人」连进房间的（测重连、抢座位、多人房间）。
  *
  * 用法：
- *   node scripts/test-bot.mjs host <昵称> [--start-at=N] [--hands=3] [--mingpai=0] [--super=1]   建房，打印房间码；凑够 N 个真人自动开局
- *   node scripts/test-bot.mjs join <房间码> <昵称>                                                加入房间
- *   node scripts/test-bot.mjs fill <房间码> <人数> [昵称前缀=陪玩]                                 一次加入好几个
+ *   node scripts/test-bot.mjs host <昵称> [--start-at=N] [--hands=3] [--grab] [--bie6] [--norebel] [--tie] [--tehua]
+ *        建房，打印房间码；凑够 N 个真人（含自己）自动开局（--start-at=1 就是自己 + 4 个人机马上开）
+ *   node scripts/test-bot.mjs join <房间码> <昵称>                 加入房间（等房主开局）
+ *   node scripts/test-bot.mjs fill <房间码> <人数> [昵称前缀=陪玩]  一次加入好几个（最多 4 个）
  *
  * 环境变量：BOT_URL（默认 http://localhost:3020）、BOT_DELAY（每步之前等多少毫秒，默认 600）、
- *          BOT_PATH（socket.io 路径，默认 /socket.io）、BOT_REMATCH=0（终局后不同意再来一局）。
- * 策略和服务器上的人机一样（botCommand）。每次 ack 之后都按最新状态重新判断。
+ *          BOT_PATH（socket.io 路径，默认 /socket.io）、BOT_REMATCH=0（终局后不同意再来一局）、
+ *          BOT_IDLE=1（只挂着不动，每一步都等超时；用来测超时和托管）。
+ * 策略和服务器上的人机一样（botCommand，只看自己这个座位能看到的状态）。每次 ack 之后都按最新状态重新判断。
+ * 注意：抢独、表态提交后服务器会随机延迟 1–3 秒才生效（snapshot.queued），这期间不会重复提交。
  */
 import { io } from "socket.io-client";
 import { botCommand, legalCommands } from "@baohuang/game";
@@ -33,11 +36,14 @@ function decide(game, me) {
   return botCommand(game, seat);
 }
 
+const STAGES = { grab: "抢独", abdicate: "登基", call: "叫保", declare: "表态", playing: "出牌", handEnd: "结算" };
+
 function runBot(name, setup) {
   const socket = io(URL, { path: PATH, transports: ["websocket"], reconnection: true });
   let room = null;
   let acting = false;
   let lastKey = "";
+  let lastHandLogged = 0;
   const log = (...items) => console.log(`[${name}]`, ...items);
   const myPlayerId = () => room?.members.find((member) => member.id === socket.id)?.playerId;
 
@@ -52,7 +58,7 @@ function runBot(name, setup) {
       }
       return;
     }
-    if (!game || game.phase !== "playing") return;
+    if (!game || game.phase !== "playing" || room.queued || process.env.BOT_IDLE === "1") return;
     const me = myPlayerId();
     const key = `${game.version}:${game.stage}`;
     const command = decide(game, me);
@@ -63,7 +69,7 @@ function runBot(name, setup) {
     socket.emit("game:command", command, (response) => {
       acting = false;
       if (!response.ok) {
-        log("被拒绝：", command.type, response.error);
+        log("被拒绝：", command.type, STAGES[game.stage], response.error);
         lastKey = "";
       } else {
         room = response.data;
@@ -84,6 +90,12 @@ function runBot(name, setup) {
     if (startAt && room.status === "waiting" && room.members.length >= startAt && room.members.find((m) => m.id === socket.id)?.isHost) {
       socket.emit("room:start", (response) => log(response.ok ? "开局" : `开局失败：${response.error}`));
     }
+    const ended = room.game?.events.find((event) => event.type === "HandEnded");
+    if (ended && ended.handNo !== lastHandLogged) {
+      lastHandLogged = ended.handNo;
+      const s = ended.summary;
+      log(`第 ${s.handNo} 盘：${{ pair: "二打三", darkSolo: "暗独", openSolo: "明独" }[s.mode]}，皇帝 ${room.game.players[s.emperor].name}、侍卫 ${room.game.players[s.guard].name}，得失`, s.deltas.join(" / "));
+    }
     if (room.game?.phase === "finished" && room.game.finalResult && !room.rematch?.acceptedIds.length) {
       const scores = room.game.players.map((player) => `${player.name} ${player.score}`).join(" / ");
       log("终局：", scores, "胜者", room.game.finalResult.winners.join(","));
@@ -100,7 +112,8 @@ function runBot(name, setup) {
 
 if (mode === "host") {
   const [name = "房主陪玩"] = positional;
-  const options = { hands: Number(flag("hands", 3)), mingpai: flag("mingpai", "1") !== "0", superDouble: flag("super", "0") === "1" };
+  const has = (name) => flags.has(`--${name}`);
+  const options = { hands: Number(flag("hands", 3)), grabSolo: has("grab"), bie6: has("bie6"), rebel: !has("norebel"), tieCard: has("tie"), tehua: has("tehua") };
   runBot(name, (socket, done, log) => {
     socket.emit("room:create", { name, options }, (response) => {
       if (!response.ok) {

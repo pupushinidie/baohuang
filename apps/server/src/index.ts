@@ -1312,6 +1312,25 @@ export const testHooks = {
     updateTurnTimer(room);
     emitRoomUpdate(room);
   },
+  /**
+   * 换成指定的局面（预览局面工厂 createScene 造的，座位 0–4 的 id 是 p0–p4），
+   * 座位 id 和名字换成这个房间当前对局的（真人、人机都对得上），然后重新计时、推送。
+   */
+  loadScene(code: string, state: GameState): void {
+    const room = rooms.get(code);
+    if (!room?.game) throw new Error("no game");
+    const players = room.game.players;
+    clearGameTimers(room);
+    const ids = new Map(state.players.map((player, seat) => [player.id, players[seat]!.id] as const));
+    room.game = {
+      ...state,
+      players: state.players.map((player, seat) => ({ ...player, id: players[seat]!.id, name: players[seat]!.name, bot: players[seat]!.bot })),
+      ready: state.ready.map((id) => ids.get(id) ?? id),
+      ...(state.finalResult ? { finalResult: { ...state.finalResult, winners: state.finalResult.winners.map((id) => ids.get(id) ?? id) } } : {}),
+    };
+    updateTurnTimer(room);
+    emitRoomUpdate(room);
+  },
   /** 让当前回合立即超时。 */
   expireTurn(code: string): void {
     const room = rooms.get(code);
