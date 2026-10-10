@@ -10,7 +10,7 @@
  *
  * 座位约定：场景里玩家 id 是 "p0"…"p4"，下标就是座位号；预览默认从座位 0（「我」）的视角看。
  */
-import { applyBaohuang, createBaohuang, legalCommands, nextSeat, redactBaohuang, setRules, stackDeal, stepSeconds, timeoutLead } from "./baohuang.js";
+import { applyBaohuang, createBaohuang, godView, legalCommands, nextSeat, redactBaohuang, setRules, stackDeal, stepSeconds, timeoutLead } from "./baohuang.js";
 import { canCallTypes, DECK_SIZE, fullDeck, HUANG_ID, isJoker, kindKey, kindOf, mustAscend, parseCards, rankOf, sortCards, suitOf, type CardId, type Suit } from "./cards.js";
 import { createRng } from "./rng.js";
 import { playOptions } from "./sets.js";
@@ -314,6 +314,8 @@ export interface SceneResult {
   readonly queued?: BaohuangCommand;
   /** 观战视角（viewer = -1）。 */
   readonly spectator?: boolean;
+  /** 观战上帝视角（房主打开了「观战看手牌」）。 */
+  readonly god?: boolean;
   /** 这个局面在演示什么。 */
   readonly note: string;
 }
@@ -520,7 +522,7 @@ const scenes: Record<string, () => SceneResult> = {
   "max-hand": () => ({
     state: createScene({
       options: { tieCard: true },
-      deal: { dealStart: 2, must: ["", "", "皇", "CJ CJ CJ H2", "D7 D7 D7"], noCall: [0, 1, 2], seed: 6 },
+      deal: { dealStart: 2, must: ["S2", "H2", "皇", "CJ CJ CJ", "D7 D7 D7"], noCall: [0, 1, 2], avoidRanks: [[15], [15], [15]], seed: 2 },
       steps: ["2 abdicate", "1 abdicate", "0 abdicate", "4 abdicate", "3 abdicate"],
     }),
     viewer: 3,
@@ -528,7 +530,7 @@ const scenes: Record<string, () => SceneResult> = {
   }),
   "hand-end": () => ({
     state: createScene({
-      deal: ["皇 H9 H9 H9 S6", "S7 S8", "H9 SK", "DQ DJ D10", "CA C10 C8"],
+      deal: ["皇 H9 H9 H9 S6", "S7 S8 S9", "H9 SK", "DQ DJ D10", "CA C10 C8"],
       steps: ["0 ascend", "0 call H9 pair", "2 declare openGuard", "timeout", "0 play S6", "1 play S8", "2 play SK", "3 pass", "4 play CA", "0 play 皇", "1 pass", "2 pass", "3 pass", "4 pass", "0 play H9 H9 H9", "1 pass", "2 pass", "3 pass", "4 pass", "1 play S7", "2 play H9"],
     }),
     viewer: 1,
@@ -546,7 +548,7 @@ const scenes: Record<string, () => SceneResult> = {
     state: createScene({
       handNo: 5,
       scores: [0, 9, -3, -3, -3],
-      deal: ["皇 H9 H9 H9 S6", "S7 S8", "H9 SK", "DQ DJ D10", "CA C10 C8"],
+      deal: ["皇 H9 H9 H9 S6", "S7 S8 S9", "H9 SK", "DQ DJ D10", "CA C10 C8"],
       steps: ["0 ascend", "0 call H9 pair", "timeout", "0 play S6", "1 play S8", "2 play SK", "3 pass", "4 play CA", "0 play 皇", "1 pass", "2 pass", "3 pass", "4 pass", "0 play H9 H9 H9", "1 pass", "2 pass", "3 pass", "4 pass", "1 play S7", "2 play H9"],
     }),
     viewer: 0,
@@ -562,7 +564,14 @@ const scenes: Record<string, () => SceneResult> = {
     state: createScene({ deal: PAIR_DEAL, steps: ["0 ascend", "0 call H9 pair", "timeout", "0 play 2 2", "timeout", "simple 3", "timeout"] }),
     viewer: 0,
     remainingMs: 1200,
-    note: "超时：有人连续超时被转成托管（人机代打），我的倒计时快到了",
+    note: "超时：座位 1 连续超时 2 次被转成托管（人机代打），这一步的倒计时只剩 1.2 秒",
+  }),
+  "spectate-god": () => ({
+    state: createScene({ deal: PAIR_DEAL, steps: ["0 ascend", "0 call H9 pair", "timeout", "simple 4"] }),
+    viewer: -1,
+    spectator: true,
+    god: true,
+    note: "观战（房主打开了「观战看手牌」）：上帝视角，所有手牌和侍卫都看得到",
   }),
   spectate: () => ({
     state: createScene({ deal: PAIR_DEAL, steps: ["0 ascend", "0 call H9 pair", "timeout", "simple 4"] }),
@@ -588,6 +597,8 @@ export interface SnapshotOptions {
   readonly offline?: readonly number[];
   readonly remainingMs?: number;
   readonly queued?: BaohuangCommand;
+  /** 观战上帝视角（viewer = -1 时）。 */
+  readonly god?: boolean;
 }
 
 /**
@@ -615,13 +626,13 @@ export function toSnapshot(state: BaohuangState, options: SnapshotOptions = {}):
     status: "playing",
     members,
     spectators: viewer < 0 ? [{ id: "sock-spectator", name: "看客" }] : [],
-    access: { ...DEFAULT_ROOM_ACCESS },
+    access: { ...DEFAULT_ROOM_ACCESS, spectatorsSeeAll: viewer < 0 && options.god === true },
     chat: [],
     voice: [],
     turnRemainingMs: options.remainingMs ?? stepSeconds(state) * 1000,
     ...(options.queued ? { queued: options.queued } : {}),
     ...(state.phase === "finished" ? { rematch: { remainingMs: 60_000, acceptedIds: [] } } : {}),
-    game: redactBaohuang(state, viewerId),
+    game: viewer < 0 && options.god ? godView(state) : redactBaohuang(state, viewerId),
   };
 }
 
@@ -632,8 +643,10 @@ export function sceneSnapshot(name: string, overrides: SnapshotOptions = {}): Lo
   const offline = overrides.offline ?? result.offline;
   const remainingMs = overrides.remainingMs ?? result.remainingMs;
   const queued = overrides.queued ?? result.queued;
+  const god = overrides.god ?? result.god;
   return toSnapshot(result.state, {
     viewer,
+    ...(god ? { god } : {}),
     ...(offline ? { offline } : {}),
     ...(remainingMs !== undefined ? { remainingMs } : {}),
     ...(queued ? { queued } : {}),
