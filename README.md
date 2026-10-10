@@ -36,10 +36,11 @@
 | `packages/game/src/baohuang.ts` | 一盘的流程、超时、隐藏信息（`redactBaohuang`）、计分 |
 | `packages/game/src/engine.ts` | 服务器、网页、人机统一调用的入口 |
 | `packages/game/src/scenes.ts` | 预览局面工厂（对外接口，见下文） |
-| `packages/game/src/bot.ts` | 人机**占位**（随机合法、暗保 / 不造反），人机阶段整个替换 |
+| `packages/game/src/bot.ts` | 人机（只有「普通」难度）：手牌评估、登基 / 叫保 / 表态按牌力分位数、出牌按「牌值变化 + 队友还是敌人」、侍卫嫌疑分；每一步附一句理由（`botDecide`） |
+| `packages/game/test/bot-harness.ts`、`scripts/sim-baohuang.ts` | 人机测量：自对弈、对随机 / 最小压牌 / 认队友贪心三个基线的强度 |
 | `packages/game/test/` | 引擎测试；`test/acceptance/` 归规则核对（背靠背写，引擎不改） |
 | `apps/server/src/index.ts` | Socket.IO 房间服务器（建房、加入、开局补人机、托管、离线代打、观战、挤登录、管理员解散、保密延迟） |
-| `apps/server/test/` | 服务器测试：`room`（流程、超时托管、离线回座）、`actions`（每种操作经过服务器）、`secrecy`（保密设定）、`spy`（抓包）、`spectate`、`kickSession`；`bots.test.ts` 归人机阶段 |
+| `apps/server/test/` | 服务器测试：`bots`（一个真人补人机打完再来一局、只剩人机关房、超时托管和取消、离线代打和原昵称回座）、`actions`（每种操作经过服务器）、`secrecy`（保密设定）、`spy`（抓包）、`spectate`、`kickSession` |
 | `apps/web/` | Vite + React 网页（界面阶段负责；现在是调试牌桌） |
 | `art/`、`apps/web/public/art/` | 美术（`art/spec.md` 是规格表）；牌面是掼蛋的像素牌 `apps/web/public/cards-pixel/` |
 | `scripts/` | 陪玩、抓包、重连脚本 |
@@ -135,7 +136,7 @@
 | `pendingSeats(state)` | 现在要做决定的座位（服务端用完整状态算） |
 | `redactGameForViewer(state, viewerId)` / `spectatorGodView(state)` | 给某个座位看的状态 / 观战上帝视角 |
 | `timeoutTurn(state, seats?)` / `timeoutCommand(state, seat)` | 超时默认动作 |
-| `botCommand(redactedState, seat)` | 人机（**只吃 redact 后的状态**）；现在是占位 |
+| `botCommand(redactedState, seat)` / `botDecide` | 人机（**只吃 redact 后的状态**，拿到带种子的完整状态会直接报错）；`botDecide` 另给一句理由，教程「提示」用 |
 | `stepSeconds(state)`、`timerKey(state)`、`simultaneousStage(state)` | 限时、计时 key（同时选的阶段里单个人的选择不改它）、是不是同时选的阶段 |
 | `parseSet`、`beats`、`checkPlay(hand, cards, topRanks, setRules(state))`、`playOptions` | 一套牌的识别、比较、合法性、出法列举（界面的「提示」、选牌校验可以直接用） |
 | `scoreHand(state)`、`chooseTieCard(hand, carried)`、`declareChoices(state, seat)` | 计分、贴牌选哪张、表态能选什么 |
@@ -167,3 +168,22 @@
 - 人机、托管、离线的人由服务器代打（`botCommand`，只给它这个座位自己看得到的状态）：出牌 0.6–1.6 秒；登基阶段 2–6 秒；抢独、表态 1–3 秒；离线至少等 3 秒。
 - 每局的种子和动作序列写进 `logs/games.jsonl`。端口和密钥（PORT、ADMIN_TOKEN、TURN_*、WEB_ORIGINS）只从环境变量读。
 - 测试钩子 `testHooks.loadScene(code, state)`：把房间的对局换成预览局面工厂造的局面（座位 id 和名字换成房间的）。
+
+## 人机（只有「普通」难度）
+
+策略参考补充文件第 1 节，全部只用这个座位看得到的信息：
+
+- **登基 / 抢独 / 叫保 / 表态**：按牌力分 S（大王、小王、2、A、≥7 张的大套、手数）在随机手牌里的分位数定门槛（分位数表在 `bot.ts`，`npx tsx scripts/sim-baohuang.ts strength` 重算）。能登基一般就登基（让位等于白送上家一张大王），中间区 70% 登基；叫点数最小的 3 张；只有 4 张同花同点、牌又不够硬就让位；牌力前 30% 才造反（皇帝被逼位或皇牌让过 3 次以上放宽到前 45%，保牌是 A / 2 收紧到前 20%）；侍卫一般暗保。
+- **出牌**：每种出法算「出完以后手牌值的变化」（清掉一整组 +1，用大王 −1，拆掉 7 张以上的控 −1），再看这一轮最大那手是队友还是敌人：队友的不压；敌人的代价不大就压，敌人只剩 5 张以内不惜用王拦；控牌够多时先出没人压得住的一路跑完；敌人快出完时出比他张数多的一套；队友快出完时喂同张数的小牌。
+- **谁是队友**：皇帝、公开的侍卫、造反失败公开的革命党是确定的；没揭开的侍卫按「谁压皇帝、谁放皇帝的小牌」打嫌疑分（看最近 60 条公开事件）。侍卫没揭开时多半放行皇帝的牌，偶尔用便宜的牌压一下；皇帝还有 8 张以上时不先出含保牌的那一组。
+- 每一步附一句理由（`botDecide(view, seat).reason`）。
+
+测量（`npx tsx scripts/sim-baohuang.ts match 300`，1 个人机 + 4 个基线，人机轮换座位，300 场 × 10 盘；分数零和，公平值 0 分 / 盘、整场第一约 20%）：
+
+| 对手 | 每盘平均分 | 整场第一 | 当皇帝 / 侍卫 / 革命党 |
+|---|---|---|---|
+| 随机（B0） | +3.15 ± 0.13 | 97.3% | +5.18 / +2.32 / +2.16 |
+| 最小压牌（B1） | +1.31 ± 0.07 | 77.7% | +2.82 / +1.55 / +0.82 |
+| 认队友贪心（B2） | +0.62 ± 0.08 | 46.3% | +2.06 / +1.20 / +0.04（全是 B2 时革命党平均 −0.41） |
+
+自对弈（`bot-selfplay.test.ts`）：默认、全开、不能造反三种各 300 场 × 3 盘，步步合法、不卡死；每步平均约 0.03ms，最慢约 1.5ms；造反约 20%、明保约 7%。人机很少独保（4 张同花同点本来就只有约 5.6% 的手牌有，还要牌很硬）。

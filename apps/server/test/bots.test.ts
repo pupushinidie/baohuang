@@ -1,11 +1,14 @@
 /**
- * 房间流程：一个真人开局空座补人机、打完整场、再来一局；超时自动处理和托管；离线人机代打、原昵称回座。
+ * 人机和托管（guluga-bots 第 5 节的服务器场景）：保皇是固定 5 座的牌类，没有「加人机 / 移出」按钮，
+ * 开局时空座自动补人机（同斗地主）。这里测：一个真人开局补 4 个人机打完整场、再来一局；只剩人机的房间关闭；
+ * 超时自动处理、连续 2 次超时进托管、取消托管；离线 3 秒（测试里 0.1 秒）人机代打、原昵称回座。
  * 保密相关（同时表态只推本人、保密延迟、观战视角）在 secrecy.test.ts。
  */
 process.env.BOT_DELAY_SCALE = "0";
 process.env.TURN_MS = "250";
 process.env.OFFLINE_TURN_MS = "100";
 process.env.REMATCH_TIMEOUT_MS = "60000";
+process.env.ROOM_ABANDON_MS = "600";
 
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { botCommand, createScene, legalCommands } from "@baohuang/game";
@@ -22,7 +25,7 @@ afterAll(async () => {
   await harness.close();
 });
 
-/** 让这个连接像陪玩脚本一样自己打（用占位人机的决定，只看自己能看到的状态）。返回停止函数。 */
+/** 让这个连接像陪玩脚本一样自己打（用人机的决定，只看自己能看到的状态）。返回停止函数。 */
 function autoplay(client: TestSocket): () => void {
   let acting = false;
   let stopped = false;
@@ -46,7 +49,7 @@ function autoplay(client: TestSocket): () => void {
   };
 }
 
-describe("房间流程", () => {
+describe("人机和托管", () => {
   it("一个真人就能开：空座开局自动补 4 个人机（咕噜一号–四号，带人机标记），打完 3 盘，再来一局", async () => {
     const host = await harness.connect();
     const room = await create(host, nick("房主"), { hands: 3 });
@@ -112,4 +115,16 @@ describe("房间流程", () => {
     expect(rejoined.data.game!.players[seat]!.hand.length).toBeGreaterThan(0);
   }, 20_000);
 
+  it("只剩人机：唯一的真人离线（测试里 0.6 秒后）房间关闭，人机不会一直自己打下去", async () => {
+    const host = await harness.connect();
+    const hostName = nick("走人");
+    const room = await create(host, hostName);
+    await start(host);
+    host.disconnect();
+    await delay(1500);
+    const back = await harness.connect();
+    const rejoined = await join(back, { name: hostName, code: room.code });
+    expect(rejoined.ok).toBe(false);
+    expect(!rejoined.ok && rejoined.error).toMatch(/找不到这个房间/);
+  }, 10_000);
 });

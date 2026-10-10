@@ -33,6 +33,8 @@ export {
 export type { NewPlayer } from "./engine.js";
 export { buildDeal, createScene, dealSizes, pickCards, runStep, scene, SCENE_NAMES, sceneSnapshot, simpleCommand, toSnapshot } from "./scenes.js";
 export type { DealSpec, SceneResult, SceneSpec, SceneStep, SnapshotOptions } from "./scenes.js";
+export { botDecide, describeSet, evalHand, guardSuspicion, strengthPercentile, STRENGTH_QUANTILES, teamView } from "./bot.js";
+export type { BotDecision, HandEval } from "./bot.js";
 export { createRng } from "./rng.js";
 export type { Rng } from "./rng.js";
 export { DEFAULT_ROOM_ACCESS, SEAT_COUNT } from "./roomTypes.js";

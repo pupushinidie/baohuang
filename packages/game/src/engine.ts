@@ -1,7 +1,7 @@
 /**
  * 服务端、网页、人机、测试只调这里：对局的创建、操作、超时、隐藏信息。
  */
-import { botCommand as placeholderBot } from "./bot.js";
+import { botCommand as bhBot } from "./bot.js";
 import {
   applyBaohuang,
   createBaohuang,
@@ -42,7 +42,7 @@ export const simultaneousStage = (state: GameState) => isSimultaneous(state);
  * 人机的决定。**只能传 redactGameForViewer(state, 这个座位的 id) 之后的状态**（人机不能看到别人的牌和侍卫是谁）。
  * 现在是占位实现（bot.ts），人机阶段会换成正式策略。
  */
-export const botCommand = (state: GameState, seat: number): GameCommand => placeholderBot(state, seat);
+export const botCommand = (state: GameState, seat: number): GameCommand => bhBot(state, seat);
 /** 超时的默认动作（规则书 9.4、勘误 K4）。 */
 export const timeoutCommand = (state: GameState, seat: number): GameCommand => bhTimeoutCommand(state, seat);
 /** 给某个座位看的状态；viewerId 为空串时只有公开信息。 */
