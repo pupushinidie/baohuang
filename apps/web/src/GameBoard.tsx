@@ -541,7 +541,10 @@ function GameBoard({ room, busy, error, notice, brand, connection, theme, themeT
       <div className={top ? "bh-play top" : "bh-play"}>
         <span className="bh-play-cards" key={`${game.handNo}-${entry.cards.join(".")}`}>
           {entry.cards.map((card, index) => (
-            <CardView key={card} card={card} scale={ps} style={index > 0 ? { marginLeft: step - w } : undefined} />
+            <span key={card} className="bh-pcard" style={index > 0 ? { marginLeft: step - w } : undefined}>
+              <CardView card={card} scale={ps} />
+              {card === rules.tehua && <img className="bh-mark" src={art.markTehua} alt="特" />}
+            </span>
           ))}
         </span>
         <small className="bh-play-label">{describeSet(entry.cards, rules)}</small>
@@ -698,7 +701,7 @@ function GameBoard({ room, busy, error, notice, brand, connection, theme, themeT
               onPointerLeave={() => window.clearTimeout(longPress.current?.timer)}
             >
               <span className="bh-col-head" style={{ width: Math.min(colStep, CARD_W * hs) }}>
-                <b>{layout.mobile ? column.label.slice(0, 1) : column.label}</b>
+                <b>{Math.min(colStep, CARD_W * hs) < 64 && column.label.length > 1 && !/^\d/.test(column.label) ? column.label.slice(0, 1) : column.label}</b>
                 <small>{picked > 0 ? `${picked}/${column.cards.length}` : layout.mobile ? column.cards.length : `×${column.cards.length}`}</small>
               </span>
               <span className="bh-col-cards" style={{ height: CARD_H * hs + (column.cards.length - 1) * layout.stack }}>
@@ -777,6 +780,12 @@ function GameBoard({ room, busy, error, notice, brand, connection, theme, themeT
           <div className="bh-mid">
             {info}
             <div className="bh-center" data-tutorial="center">
+              {me.auto && !spectating && playing && (
+                <div className="bh-auto-banner">
+                  托管中：人机替你出牌
+                  <button className="primary-button" type="button" onClick={() => send({ type: "AUTO", on: false })} data-tutorial="cancel-auto">取消托管</button>
+                </div>
+              )}
               {actionBar ?? playSlot(mySeat, layout.mobile ? tableBox.width - 32 : 520)}
               {myPlay && <span className={typeof check === "string" ? "bh-note bad" : "bh-note"}>{selectionNote}</span>}
               {!myTurn && stage === "abdicate" && game.huangHolder === mySeat && !canAscend(hand) && !spectating && <span className="bh-note">没有能叫的牌：几秒后自动让位</span>}
@@ -801,12 +810,6 @@ function GameBoard({ room, busy, error, notice, brand, connection, theme, themeT
             </div>
           )}
           {banner && <div className={`bh-banner ${banner.kind}`} role="status">{banner.text}</div>}
-          {me.auto && !spectating && playing && (
-            <div className="bh-auto-banner">
-              托管中：人机替你出牌
-              <button className="primary-button" type="button" onClick={() => send({ type: "AUTO", on: false })} data-tutorial="cancel-auto">取消托管</button>
-            </div>
-          )}
           {overlay}
         </div>
 

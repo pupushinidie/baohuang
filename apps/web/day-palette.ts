@@ -44,7 +44,7 @@ export const palette: DayPalette = {
     "bh-plate-line", "bh-score", "bh-count", "bh-place", "bh-tags", "bh-chip", "bh-clock", "bh-play", "bh-play-cards", "bh-play-label",
     "bh-pass", "bh-mid", "bh-info", "bh-info-row", "bh-multi", "bh-guard-tag", "bh-tag-frame", "bh-info-text", "bh-tie", "bh-center",
     "bh-actions", "bh-wait", "bh-note", "bh-status", "bh-timer", "bh-mine", "bh-hand", "bh-columns", "bh-col", "bh-col-head",
-    "bh-col-cards", "bh-hcard", "bh-mark", "bh-hand-empty", "bh-fx", "bh-banner", "bh-bao-show", "bh-bao-frame", "bh-bao-slot",
+    "bh-col-cards", "bh-hcard", "bh-pcard", "bh-mark", "bh-hand-empty", "bh-fx", "bh-banner", "bh-bao-show", "bh-bao-frame", "bh-bao-slot",
     "bh-bao-fourth", "bh-auto-banner", "bh-card", "bh-ribbon",
   ],
 

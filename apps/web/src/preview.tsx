@@ -9,6 +9,7 @@
  *   &from=场景名（先显示这个场景，0.8 秒后换成 s，用来看登基、叫保亮牌、揭开侍卫这些动画）
  *   &chat=1（聊天里放几条示例消息）
  *   &pick=牌 id,牌 id（预先选中的手牌，只在轮到自己出牌时有用）
+ *   &auto=1（自己在托管中，看托管横幅和「取消托管」）
  *   &nav=0（不显示底下的场景导航，截图用）
  *
  * 界面阶段维护；教程和验收要加场景就往 ROOM_SCENES 或规则包的 scenes.ts 里加，不要删别人的。生产构建只打包 index.html。
@@ -74,6 +75,7 @@ function gameRoom(key: string): LobbyRoomSnapshot {
     room.game!.players[viewer] = { ...player, bot: false };
   }
   Object.defineProperty(socket, "id", { value: viewer >= 0 ? `sock-${viewer}` : "sock-spectator", configurable: true });
+  if (params.get("auto") === "1" && viewer >= 0) room.game!.players[viewer] = { ...room.game!.players[viewer]!, auto: true };
   const withTimer: LobbyRoomSnapshot = timer === "" ? (({ turnRemainingMs: _drop, ...rest }) => rest)(room) : room;
   return params.get("chat") === "1" ? { ...withTimer, chat: SAMPLE_CHAT } : withTimer;
 }

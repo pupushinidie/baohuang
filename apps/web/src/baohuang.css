@@ -178,7 +178,7 @@
   position: absolute;
   z-index: 20;
   left: 50%;
-  top: 38%;
+  top: 27%;
   max-width: calc(100% - 32px);
   padding: 10px 28px;
   color: #ffde8c;
@@ -204,10 +204,8 @@
 .bh-auto-banner {
   --rim: #ffde8c;
   --shade: #977648;
-  position: absolute;
+  position: relative;
   z-index: 21;
-  left: 50%;
-  top: 8px;
   display: flex;
   align-items: center;
   gap: 12px;
@@ -216,7 +214,6 @@
   background: rgba(42, 16, 4, 0.96);
   font-size: 24px;
   white-space: nowrap;
-  transform: translateX(-50%);
 }
 .app-shell .bh-auto-banner .primary-button { width: auto; min-height: 44px; margin: 0; font-size: 24px; }
 
@@ -371,7 +368,7 @@
 .bh-table.mobile .bh-mark { top: 1px; right: 1px; width: 16px; height: 16px; }
 .bh-table.mobile .bh-fx { left: 20px; top: -20px; width: 64px; height: 64px; }
 .bh-table.mobile .bh-banner { font-size: 24px; padding: 8px 14px; }
-.bh-table.mobile .bh-auto-banner { top: auto; bottom: 8px; font-size: 12px; }
+.bh-table.mobile .bh-auto-banner { font-size: 12px; }
 .bh-table.mobile .bh-bao-show b { font-size: 12px; }
 .bh-screen.mobile .bh-summary { position: fixed; inset: 6px; width: auto; }
 .bh-screen.mobile .bh-sum-players li { grid-template-columns: 80px minmax(0, 1fr) auto; gap: 6px; }
@@ -381,3 +378,11 @@
 @media (prefers-reduced-motion: reduce) {
   .bh-fx, .bh-banner, .bh-bao-show, .bh-plate.active, .bh-play-cards, .bh-pass, .bh-actions, .bh-clock.low, .bh-count.low b, .bh-place, .bh-huang-mini, .bh-timer.low { animation: none; }
 }
+.bh-screen.mobile .bh-summary footer { position: sticky; z-index: 2; bottom: -16px; margin: 0 -20px -16px; padding: 8px 20px 16px; background: var(--panel); }
+.bh-screen.mobile .bh-summary header .quiet-button { order: 3; }
+.bh-screen.mobile .bh-standings li { grid-template-columns: 24px 40px minmax(0, 1fr) 48px; gap: 6px; }
+.bh-screen.mobile .bh-standings small { display: none; }
+.bh-table.mobile .bh-banner { top: 50%; }
+.bh-table.mobile .bh-bao-show { top: 18%; }
+.bh-pcard { position: relative; display: block; line-height: 0; }
+.bh-table.mobile .bh-mine .bh-huang-mini { display: none; }
