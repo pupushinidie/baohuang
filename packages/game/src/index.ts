@@ -35,6 +35,19 @@ export { buildDeal, createScene, dealSizes, pickCards, runStep, scene, SCENE_NAM
 export type { DealSpec, SceneResult, SceneSpec, SceneStep, SnapshotOptions } from "./scenes.js";
 export { botDecide, describeSet, evalHand, guardSuspicion, strengthPercentile, STRENGTH_QUANTILES, teamView } from "./bot.js";
 export type { BotDecision, HandEval } from "./bot.js";
+export {
+  anchorVisible,
+  createPracticeGame,
+  createTutorialGame,
+  sameCommand,
+  selectionMatches,
+  TUTORIAL_FINAL_STEP,
+  TUTORIAL_NAMES,
+  TUTORIAL_SELF,
+  TUTORIAL_STEPS,
+  tutorialActor,
+} from "./tutorial.js";
+export type { TutorialFace, TutorialStep } from "./tutorial.js";
 export { createRng } from "./rng.js";
 export type { Rng } from "./rng.js";
 export { DEFAULT_ROOM_ACCESS, SEAT_COUNT } from "./roomTypes.js";

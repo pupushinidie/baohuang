@@ -38,6 +38,9 @@ import { GameRoomMenu, SpectateBar } from "./RoomExtras.js";
 import { socket } from "./socket.js";
 import { pickLayout, useBox, useCountdown, type Layout } from "./table.js";
 import type { Theme } from "./theme.js";
+import { Coach, TipToast } from "./tutorial/Coach.js";
+import { useFirstTimeTips } from "./tutorial/tips.js";
+import { detectTips, GAME_ID, hintFor, TIPS, type Hint } from "./tutorialGame.js";
 
 interface GameBoardProps {
   readonly room: LobbyRoomSnapshot;
@@ -57,6 +60,16 @@ interface GameBoardProps {
   readonly onLeave: () => void;
   /** 教程用：额外放在牌桌上的东西（教练框）。 */
   readonly overlay?: ReactNode;
+  /** 自己在 room.members 里的 id（教程里是固定值），默认 socket.id。 */
+  readonly selfMemberId?: string;
+  /** online 真实对局；tutorial 剧本进行中（不出提示和小贴士）；practice 练习局（随时能看提示）。 */
+  readonly mode?: "online" | "tutorial" | "practice";
+  /** 整场结束框里替代「再来一局」的按钮（练习局放「结束教程」「再练一局」）。 */
+  readonly finalActions?: ReactNode;
+  /** 侧栏最上面额外放的东西（教程进度）。 */
+  readonly sidePanel?: ReactNode;
+  /** 选中的手牌变了（教程用来把高亮挪到「出牌」）。 */
+  readonly onSelection?: (cards: readonly CardId[]) => void;
 }
 
 const DECLARE_TEXT = { openGuard: "明保", darkGuard: "暗保", rebel: "造反", noRebel: "不造反" } as const;
@@ -156,9 +169,9 @@ interface Banner {
   readonly kind: "info" | "gold" | "red" | "blue";
 }
 
-function GameBoard({ room, busy, error, notice, brand, connection, theme, themeToggle, chat, onCommand, onRematch, onDissolve, watchId, onWatch, onLeave, overlay }: GameBoardProps) {
+function GameBoard({ room, busy, error, notice, brand, connection, theme, themeToggle, chat, onCommand, onRematch, onDissolve, watchId, onWatch, onLeave, overlay, selfMemberId, mode: boardMode = "online", finalActions, onSelection, sidePanel }: GameBoardProps) {
   const game = room.game as BaohuangState;
-  const member = room.members.find((candidate) => candidate.id === socket.id);
+  const member = room.members.find((candidate) => candidate.id === (selfMemberId ?? socket.id));
   const spectating = !member;
   const myId = member?.playerId ?? watchId;
   const mySeat = Math.max(0, game.players.findIndex((player) => player.id === myId));
@@ -213,10 +226,15 @@ function GameBoard({ room, busy, error, notice, brand, connection, theme, themeT
   useEffect(() => setSelected((current) => current.filter((card) => hand.includes(card))), [game.version, mySeat]);
   useEffect(() => setSelected([]), [game.handNo, stage === "playing", game.turn === mySeat]);
   const canSelect = !spectating && playing && stage === "playing" && hand.length > 0;
+  useEffect(() => onSelection?.(selected), [selected.join()]);
   const selectedSet = new Set(selected);
+  // 双击（手机上连点两下）= 整列选上；紧跟在双击后面的那一下点击不算（不然连点三下会把整列又清掉）
+  const lastAll = useRef<{ key: string; at: number } | null>(null);
   const tapColumn = (column: Column, all = false) => {
     if (!canSelect) return;
     const rest = column.cards.filter((card) => !selectedSet.has(card));
+    if (!all && lastAll.current && lastAll.current.key === column.key && Date.now() - lastAll.current.at < 450) return;
+    if (all) lastAll.current = { key: column.key, at: Date.now() };
     if (all) setSelected([...selected.filter((card) => !column.cards.includes(card)), ...column.cards]);
     else if (rest.length > 0) setSelected([...selected, rest[0]!]);
     else setSelected(selected.filter((card) => !column.cards.includes(card)));
@@ -235,19 +253,24 @@ function GameBoard({ room, busy, error, notice, brand, connection, theme, themeT
     setHintIndex(0);
     setHintReason("");
   }, [game.version]);
+  // 「提示」的咕噜嘎小框：只有自己和人机时（练习局，或一个人加人机开的房间）
+  const botsOnly = room.members.every((candidate) => candidate.id === member?.id);
+  const canHint = !spectating && !me.auto && myTurn && (boardMode === "practice" || (boardMode === "online" && botsOnly));
+  const [coachHint, setCoachHint] = useState<{ version: number; hint: Hint } | null>(null);
+  const shownHint = coachHint && coachHint.version === game.version && canHint ? coachHint.hint : null;
+  const askHint = () => {
+    const next = hintFor(game, myId);
+    if (next.command?.type === "PLAY") setSelected([...next.command.cardIds]);
+    setCoachHint({ version: game.version, hint: next });
+  };
   const hint = () => {
     if (!myPlay || options.length === 0) return;
     if (hintIndex === 0) {
       try {
         const decision = botDecide(game, mySeat);
-        if (decision.command.type === "PLAY") {
-          setSelected([...decision.command.cardIds]);
-          setHintReason(decision.reason);
-          setHintIndex(1);
-          return;
-        }
-        setSelected([]);
-        setHintReason(decision.reason);
+        setSelected(decision.command.type === "PLAY" ? [...decision.command.cardIds] : []);
+        if (canHint) setHintReason(decision.reason);
+        if (canHint) setCoachHint({ version: game.version, hint: hintFor(game, myId) });
         setHintIndex(1);
         return;
       } catch {
@@ -362,7 +385,13 @@ function GameBoard({ room, busy, error, notice, brand, connection, theme, themeT
       if (event.metaKey || event.ctrlKey || event.altKey) return;
       const key = event.key.toLowerCase();
       if (key === "escape") setSelected([]);
-      if (!myPlay) return;
+      if (!myPlay) {
+        if (key === "h" && canHint) {
+          if (shownHint) setCoachHint(null);
+          else askHint();
+        }
+        return;
+      }
       if ((key === " " || key === "enter") && canPlay) {
         event.preventDefault();
         play();
@@ -396,6 +425,7 @@ function GameBoard({ room, busy, error, notice, brand, connection, theme, themeT
     });
     return lines.reverse();
   }, [game.version, mySeat]);
+  const tips = useFirstTimeTips(GAME_ID, game.version, () => detectTips(game, myId), TIPS, boardMode === "online" && !spectating);
   const [sideTab, setSideTab] = useState<"log" | "chat">("log");
   const [chatSeen, setChatSeen] = useState(room.chat.length);
   useEffect(() => {
@@ -532,13 +562,14 @@ function GameBoard({ room, busy, error, notice, brand, connection, theme, themeT
   const playSlot = (seat: number, maxWidth: number) => {
     const entry = game.table[seat];
     if (!(stage === "playing" || stage === "handEnd") || !entry) return <div className="bh-play empty" />;
-    if (entry.kind === "pass") return <div className="bh-play"><span className="bh-pass">不要</span></div>;
+    const anchorName = `play-${relOf(seat)}`;
+    if (entry.kind === "pass") return <div className="bh-play" data-tutorial={anchorName}><span className="bh-pass">不要</span></div>;
     const top = game.lastPlay?.seat === seat;
     const n = entry.cards.length;
     const w = CARD_W * ps;
     const step = n > 1 ? Math.max(4, Math.min(Math.round(w * 0.45), Math.floor((maxWidth - w) / (n - 1)))) : w;
     return (
-      <div className={top ? "bh-play top" : "bh-play"}>
+      <div className={top ? "bh-play top" : "bh-play"} data-tutorial={anchorName}>
         <span className="bh-play-cards" key={`${game.handNo}-${entry.cards.join(".")}`}>
           {entry.cards.map((card, index) => (
             <span key={card} className="bh-pcard" style={index > 0 ? { marginLeft: step - w } : undefined}>
@@ -602,6 +633,7 @@ function GameBoard({ room, busy, error, notice, brand, connection, theme, themeT
       {label}
     </button>
   );
+  const hintButton = canHint && stage !== "playing" ? button("提示", () => (shownHint ? setCoachHint(null) : askHint()), false, "hint-button", "small") : null;
   const actionBar = (() => {
     if (spectating || !playing) return null;
     if (queued && (stage === "grab" || stage === "declare")) {
@@ -614,6 +646,7 @@ function GameBoard({ room, busy, error, notice, brand, connection, theme, themeT
           <div className="bh-actions">
             {button("不抢", () => send({ type: "GRAB", grab: false }), false, "nograb-button")}
             {button("抢独 ±24", () => send({ type: "GRAB", grab: true }), true, "grab-button", "hot")}
+            {hintButton}
           </div>
         );
       case "abdicate":
@@ -621,6 +654,7 @@ function GameBoard({ room, busy, error, notice, brand, connection, theme, themeT
           <div className="bh-actions">
             {button("让位", () => send({ type: "ABDICATE" }), !canAscend(hand), "abdicate-button")}
             {canAscend(hand) && button("登基", () => send({ type: "ASCEND" }), true, "ascend-button", "hot")}
+            {hintButton}
           </div>
         );
       case "call":
@@ -634,6 +668,7 @@ function GameBoard({ room, busy, error, notice, brand, connection, theme, themeT
                     button(`明独 ${kindName(type.suit, type.rank)}`, () => send({ type: "CALL", suit: type.suit, rank: type.rank, mode: "openSolo" }), false, `open-${type.suit}${type.rank}`, "hot"),
                   ],
             )}
+            {hintButton}
           </div>
         );
       case "declare": {
@@ -644,6 +679,7 @@ function GameBoard({ room, busy, error, notice, brand, connection, theme, themeT
             {choices.includes("openGuard") && button("明保 ×2", () => send({ type: "DECLARE", choice: "openGuard" }), true, "open-guard", "blue")}
             {choices.includes("noRebel") && button("不造反", () => send({ type: "DECLARE", choice: "noRebel" }), !choices.includes("rebel"), "no-rebel")}
             {choices.includes("rebel") && button("造反", () => send({ type: "DECLARE", choice: "rebel" }), true, "rebel-button", "hot")}
+            {hintButton}
           </div>
         );
       }
@@ -815,6 +851,7 @@ function GameBoard({ room, busy, error, notice, brand, connection, theme, themeT
 
         <aside className="bh-side">
           {spectating && <SpectateBar room={room} watchId={myId} onWatch={onWatch} onLeave={onLeave} />}
+          {sidePanel}
           <section className="bh-panel bh-side-status">
             {detail && <p>{detail}</p>}
             {!spectating && playing && stage !== "handEnd" && (
@@ -847,7 +884,22 @@ function GameBoard({ room, busy, error, notice, brand, connection, theme, themeT
       {showSummary && (
         <HandSummaryDialog game={game} mySeat={mySeat} spectating={spectating} nameOf={nameOf} secondsLeft={secondsLeft} busy={busy} mobile={layout.mobile} onReady={() => send({ type: "READY" })} onHide={() => setHideSummary(true)} />
       )}
-      {game.phase === "finished" && !settling && <FinalDialog game={game} room={room} mySeat={mySeat} spectating={spectating} nameOf={nameOf} mobile={layout.mobile} onRematch={onRematch} onLeave={onLeave} />}
+      {game.phase === "finished" && !settling && <FinalDialog game={game} room={room} mySeat={mySeat} spectating={spectating} nameOf={nameOf} mobile={layout.mobile} onRematch={onRematch} onLeave={onLeave} actions={finalActions} />}
+      {shownHint && (
+        <Coach
+          bubble
+          view={{
+            key: `hint-${game.version}`,
+            say: shownHint.say,
+            ...(shownHint.note ? { note: shownHint.note } : {}),
+            anchor: shownHint.anchor,
+            focus: false,
+            face: "think",
+            actions: <button className="quiet-button" type="button" onClick={() => setCoachHint(null)}>知道了</button>,
+          }}
+        />
+      )}
+      {tips.tip && <TipToast tip={tips.tip} onClose={tips.dismiss} onNever={tips.never} />}
     </div>
   );
 }
@@ -900,7 +952,7 @@ function HandSummaryDialog({ game, mySeat, spectating, nameOf, secondsLeft, busy
           <small>第 {game.handNo} 盘 · {summary.mode === "pair" ? "二打三" : summary.mode === "darkSolo" ? "暗独" : "明独"}{summary.grabbed ? "（抢独）" : ""}{summary.forced ? " · 逼位" : ""} · ×{summary.multiplier}</small>
           <button className="quiet-button" type="button" onClick={onHide}>看牌桌</button>
         </header>
-        <p className="bh-formula">{formula}</p>
+        <p className="bh-formula" data-tutorial="sum-formula">{formula}</p>
         <ol className="bh-sum-players">
           {order.map((seat) => {
             const role = roleOfSummary(game, seat);
@@ -941,7 +993,7 @@ function HandSummaryDialog({ game, mySeat, spectating, nameOf, secondsLeft, busy
   );
 }
 
-function FinalDialog({ game, room, mySeat, spectating, nameOf, mobile, onRematch, onLeave }: {
+function FinalDialog({ game, room, mySeat, spectating, nameOf, mobile, onRematch, onLeave, actions }: {
   game: BaohuangState;
   room: LobbyRoomSnapshot;
   mySeat: number;
@@ -950,6 +1002,7 @@ function FinalDialog({ game, room, mySeat, spectating, nameOf, mobile, onRematch
   mobile: boolean;
   onRematch: (accept: boolean) => void;
   onLeave: () => void;
+  actions?: ReactNode;
 }) {
   const result = game.finalResult!;
   const [showLast, setShowLast] = useState(false);
@@ -980,7 +1033,9 @@ function FinalDialog({ game, room, mySeat, spectating, nameOf, mobile, onRematch
           ))}
         </ol>
         {game.summary && <button className="quiet-button" type="button" onClick={() => setShowLast(true)}>看最后一盘结算</button>}
-        {spectating ? (
+        {actions ? (
+          <div className="bh-rematch"><div className="gm-panel-actions">{actions}</div></div>
+        ) : spectating ? (
           <div className="bh-rematch">
             <span>{room.rematch ? `等玩家决定要不要再来一局（${room.rematch.acceptedIds.length}/${room.members.length}）` : "对局结束"}</span>
             <div className="gm-panel-actions"><button className="quiet-button" type="button" onClick={onLeave}>离开观战</button></div>

@@ -10,6 +10,7 @@
  *   &chat=1（聊天里放几条示例消息）
  *   &pick=牌 id,牌 id（预先选中的手牌，只在轮到自己出牌时有用）
  *   &auto=1（自己在托管中，看托管横幅和「取消托管」）
+ *   &tut=again（等候房间的新手教程入口：学过以后的小按钮；默认是第一次来的邀请卡）
  *   &nav=0（不显示底下的场景导航，截图用）
  *
  * 界面阶段维护；教程和验收要加场景就往 ROOM_SCENES 或规则包的 scenes.ts 里加，不要删别人的。生产构建只打包 index.html。
@@ -23,6 +24,7 @@ import GameBoard from "./GameBoard.js";
 import RoomChat from "./RoomChat.js";
 import { socket } from "./socket.js";
 import { applyTheme, readTheme, ThemeToggle, useTheme } from "./theme.js";
+import { TutorialInvite } from "./tutorial/Invite.js";
 import { useVoice } from "./voice.js";
 import "./styles.css";
 import "./app-pixel.css";
@@ -161,7 +163,7 @@ function PreviewRoom() {
           <ConnectionStatus connected />
         </div>
       </header>
-      <RoomView room={room} busy={false} error="" notice="" onCopyCode={() => {}} onLeave={() => {}} onStart={() => {}} onKick={() => {}} onDissolve={() => {}} chat={<RoomChat room={room} voice={voice} />} />
+      <RoomView room={room} busy={false} error="" notice="" onCopyCode={() => {}} onLeave={() => {}} onStart={() => {}} onKick={() => {}} onDissolve={() => {}} chat={<RoomChat room={room} voice={voice} />} tutorial={<TutorialInvite record={params.get("tut") === "again" ? "done" : null} title="等人的时候，先学一下？" text="咕噜嘎带你在真牌桌上走一盘，3 分钟。不会离开房间，房主一开局就自动回来。" again="新手教程（不离开房间）" onOpen={() => {}} />} />
       <Nav />
     </main>
   );
