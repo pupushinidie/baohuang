@@ -556,7 +556,7 @@ export function RoomView({
           <h1>{spectating ? "你在观战。" : room.status === "waiting" ? "牌桌准备中。" : "好戏即将开始。"}</h1>
           <p>{spectating ? "等房主开始对局；有空座位时可以坐下一起玩。" : "把房间码分享给朋友；人没到齐也能开始，空座位由人机补上。"}</p>
         </div>
-        {tutorial && room.status === "waiting" && !spectating && <div className="bh-room-tut">{tutorial}</div>}
+        {tutorial && room.status === "waiting" && !spectating && <div className="bh-room-tut top">{tutorial}</div>}
         <div className="room-heading-actions">
           {isHost && <button className="quiet-button danger" type="button" onClick={onDissolve} disabled={busy}>解散房间</button>}
           <button className="quiet-button" type="button" onClick={onLeave} disabled={busy || (room.status === "playing" && !spectating)}>
@@ -630,6 +630,7 @@ export function RoomView({
         </div>
       ) : null}
 
+      {tutorial && room.status === "waiting" && !spectating && <div className="bh-room-tut bottom">{tutorial}</div>}
       {error && <p className="feedback feedback-error room-feedback" role="alert">{error}</p>}
       {notice && <p className="feedback feedback-success room-feedback" role="status">{notice}</p>}
       <div className="room-secure-note"><span>◇</span> {room.access.open ? "公开房间：首页列表里的人可以直接加入空座位。" : "邀请制：要有房间码才能加入；首页列表不显示房间码。"}</div>

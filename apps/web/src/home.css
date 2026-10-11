@@ -162,9 +162,10 @@
 @media (max-width: 899px) {
   .bh-home .welcome-copy > :is(.tut-invite, .tut-again) { order: 3; }
 }
+.bh-room-tut.bottom { display: none; }
 @media (max-width: 759px) {
-  .bh-room .room-heading { flex-wrap: wrap; }
-  .bh-room-tut { order: 3; flex-basis: 100%; }
+  .bh-room-tut.top { display: none; }
+  .bh-room-tut.bottom { display: block; max-width: none; margin-top: 16px; }
 }
 @media (min-width: 900px) and (max-height: 820px) {
   .app-shell.bh-home .tut-invite { margin-top: 10px; padding: 8px 12px; }
