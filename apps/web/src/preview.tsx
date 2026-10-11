@@ -11,6 +11,7 @@
  *   &pick=牌 id,牌 id（预先选中的手牌，只在轮到自己出牌时有用）
  *   &auto=1（自己在托管中，看托管横幅和「取消托管」）
  *   &tut=again（等候房间的新手教程入口：学过以后的小按钮；默认是第一次来的邀请卡）
+ *   &fa=1（整场结束框换成练习局的「结束教程」「再练一局」）
  *   &nav=0（不显示底下的场景导航，截图用）
  *
  * 界面阶段维护；教程和验收要加场景就往 ROOM_SCENES 或规则包的 scenes.ts 里加，不要删别人的。生产构建只打包 index.html。
@@ -143,6 +144,7 @@ function PreviewGame() {
         watchId={room.game!.players[0]!.id}
         onWatch={() => {}}
         onLeave={() => {}}
+        {...(params.get("fa") === "1" ? { mode: "practice" as const, finalActions: <><button className="quiet-button" type="button">结束教程</button><button className="primary-button" type="button">再练一局</button></> } : {})}
       />
       {confirmDialog}
       <Nav />
