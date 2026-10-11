@@ -33,7 +33,9 @@ import {
 } from "@baohuang/game";
 import { art, coverSize, PLACE_NAMES, preloadArt, seatColor, type FxArt, type RoleArt } from "./art.js";
 import { CARD_BACK, CARD_H, CARD_W, CardView } from "./cards.js";
+import { denySound, selectSound, useGameSfx } from "./game-sfx.js";
 import GameRules from "./GameRules.js";
+import { useSfxCountdown } from "./gm-sound.js";
 import { GameRoomMenu, SpectateBar } from "./RoomExtras.js";
 import { socket } from "./socket.js";
 import { pickLayout, useBox, useCountdown, type Layout } from "./table.js";
@@ -203,6 +205,9 @@ function GameBoard({ room, busy, error, notice, brand, connection, theme, themeT
   const myTurn = legal.length > 0 && !queued;
   const myPlay = myTurn && stage === "playing";
   const following = game.lastPlay !== null;
+  // 动作音效（game-sfx.ts）和自己最后 5 秒的倒计时滴答
+  useGameSfx(game, spectating ? null : mySeat, myTurn, queued);
+  useSfxCountdown(myTurn, secondsLeft);
 
   // ---------- 手牌和选牌 ----------
   const hand = me.hand;
@@ -231,10 +236,15 @@ function GameBoard({ room, busy, error, notice, brand, connection, theme, themeT
   // 双击（手机上连点两下）= 整列选上；紧跟在双击后面的那一下点击不算（不然连点三下会把整列又清掉）
   const lastAll = useRef<{ key: string; at: number } | null>(null);
   const tapColumn = (column: Column, all = false) => {
-    if (!canSelect) return;
+    if (!canSelect) {
+      // 还没到出牌阶段就点手牌：告诉他现在点不了
+      if (!spectating && playing) denySound();
+      return;
+    }
     const rest = column.cards.filter((card) => !selectedSet.has(card));
     if (!all && lastAll.current && lastAll.current.key === column.key && Date.now() - lastAll.current.at < 450) return;
     if (all) lastAll.current = { key: column.key, at: Date.now() };
+    selectSound(all || rest.length > 0);
     if (all) setSelected([...selected.filter((card) => !column.cards.includes(card)), ...column.cards]);
     else if (rest.length > 0) setSelected([...selected, rest[0]!]);
     else setSelected(selected.filter((card) => !column.cards.includes(card)));
