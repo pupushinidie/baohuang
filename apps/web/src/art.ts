@@ -30,6 +30,12 @@ export const art = {
   crest: `${BASE}seat-crest.png`,
 };
 
+/** 全屏场景背景（首页、等候房间、牌桌、教程、观战都铺满窗口）：和 scene-*.png 同一张金銮殿，512×288。 */
+export const bgArt = {
+  night: `${BASE}bg/night.png`,
+  day: `${BASE}bg/day.png`,
+};
+
 /** 名次叫法（规则书第 1 节）。 */
 export const PLACE_NAMES = ["", "头科", "二科", "三科", "二落", "大落"] as const;
 

@@ -386,3 +386,20 @@
 .bh-table.mobile .bh-bao-show { top: 18%; }
 .bh-pcard { position: relative; display: block; line-height: 0; }
 .bh-table.mobile .bh-mine .bh-huang-mini { display: none; }
+
+/* ---------- 全屏背景：场景铺满窗口（16:9 居中裁切），上面一层罩色让面板更突出 ---------- */
+.bh-backdrop { position: fixed; inset: 0; z-index: 0; overflow: hidden; pointer-events: none; background: #150f0a; }
+.bh-backdrop-art {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: max(100vw, calc(100vh * 16 / 9));
+  height: max(100vh, calc(100vw * 9 / 16));
+  transform: translate(-50%, -50%);
+  background-size: 100% 100%;
+  image-rendering: pixelated;
+}
+.bh-backdrop-veil { position: absolute; inset: 0; background: #0a0705; opacity: 0.4; }
+.app-shell.bh-home > :not(.bh-backdrop):not(.gm-modal-backdrop),
+.app-shell.bh-room > :not(.bh-backdrop):not(.gm-modal-backdrop),
+.app-shell.bh-game > :not(.bh-backdrop):not(.gm-modal-backdrop) { position: relative; z-index: 1; }

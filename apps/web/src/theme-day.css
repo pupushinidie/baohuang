@@ -18,3 +18,7 @@
 }
 :root[data-theme="day"] .bh-table :is(.quiet-button, .primary-button) { --text: #1d2433; --muted: #5b6a86; }
 :root[data-theme="day"] .bh-plate.active { background: #3a2c10; }
+
+/* 全屏背景：白天版罩色变浅 */
+:root[data-theme="day"] .bh-backdrop { background: #efe8dc; }
+:root[data-theme="day"] .bh-backdrop-veil { background: #ffffff; opacity: 0.25; }
