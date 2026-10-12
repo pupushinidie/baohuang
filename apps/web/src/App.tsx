@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState, type CSSProperties, type FormEvent, type ReactNode } from "react";
 import { DEFAULT_OPTIONS, HUANG_ID, parseCards, SEAT_COUNT, type CardId, type GameCommand, type GameOptions, type LobbyRoomSnapshot, type PublicRoomSummary } from "@baohuang/game";
-import { art, seatColor } from "./art.js";
+import { art, bgArt, seatColor } from "./art.js";
 import { CardView } from "./cards.js";
 import { useConfirm } from "./confirm.js";
 import GameBoard from "./GameBoard.js";
@@ -10,7 +10,7 @@ import RoomChat from "./RoomChat.js";
 import { roomRole, RoomSettingsPanel, SeatSwitch } from "./RoomExtras.js";
 import { socket } from "./socket.js";
 import { ThemeToggle, useTheme } from "./theme.js";
-import { NO_BGM, SoundToggle, useBgm, useRoomSfx } from "./gm-sound.js";
+import { type BgmTrack, SoundToggle, useBgm, useRoomSfx } from "./gm-sound.js";
 import { errorSound } from "./game-sfx.js";
 import { TutorialInvite } from "./tutorial/Invite.js";
 import { readTutorial } from "./tutorial/storage.js";
@@ -31,6 +31,9 @@ const CENTER_URL = import.meta.env.DEV ? `${window.location.protocol}//${window.
 function normalizeRoomCode(value: string): string {
   return value.toUpperCase().replace(/[^A-HJ-NP-Z2-9]/g, "").slice(0, 6);
 }
+
+// 背景音乐：进了房间（等候房间、对局、观战）和新手教程里放，首页和房间列表不放。gain / start / end 按这首曲子量（见 gm-sound.tsx）。
+const BGM: BgmTrack = { src: `${import.meta.env.BASE_URL}bgm/baohuang.mp3`, gain: 0.9, start: 0.15, end: 116.6 };
 
 function App() {
   const [mode, setMode] = useState<EntryMode>("create");
@@ -59,7 +62,7 @@ function App() {
   // 新手教程：首页或等候房间点进来（地址带 ?tutorial 时直接打开，游戏中心可以直接链过来）
   const [tutorialOpen, setTutorialOpen] = useState(() => new URLSearchParams(window.location.search).has("tutorial"));
   // 声音：进了房间（等候房间、对局、观战）和新手教程里顶栏有 ♪ 面板（音效、语音音量）；这款还没有背景音乐。
-  useBgm(room || tutorialOpen ? NO_BGM : null);
+  useBgm(room || tutorialOpen ? BGM : null);
   // 房间里的提示音：有人进出、开局、收到聊天（gm-sound.tsx）
   const lastChat = room?.chat[room.chat.length - 1];
   useRoomSfx(room ? { members: room.members.length + room.spectators.length, playing: room.status === "playing", chatCount: room.chat.length, lastChatMine: lastChat?.senderId === socket.id } : null);
@@ -266,6 +269,7 @@ function App() {
   if (tutorialOpen && room?.status !== "playing") {
     return (
       <main data-gc-table className="app-shell bh-game tut-on">
+        <SceneBackdrop theme={theme} />
         <TutorialMode name={name} brand={<Brand />} themeToggle={themeToggle} theme={theme} waitingRoom={room?.code} onExit={closeTutorial} />
         {confirmDialog}
       </main>
@@ -277,6 +281,7 @@ function App() {
     const watched = players.some((player) => player.id === watchId) ? watchId : players[0]!.id;
     return (
       <main data-gc-table className="app-shell bh-game">
+        <SceneBackdrop theme={theme} />
         <GameBoard
           room={room}
           busy={busy}
@@ -302,6 +307,7 @@ function App() {
   if (room) {
     return (
       <main className="app-shell bh-room">
+        <SceneBackdrop theme={theme} />
         <header className="topbar">
           <Brand />
           <div className="topbar-right">
@@ -338,6 +344,7 @@ function App() {
 
   return (
     <main className="app-shell bh-home">
+      <SceneBackdrop theme={theme} />
       <header className="topbar">
         <Brand />
         <div className="topbar-right">
@@ -368,15 +375,12 @@ function App() {
             <li><b>表态</b>侍卫明保暗保，革命党造反，最多 ×2</li>
             <li><b>独保</b>一个人打四个，暗独 ±12、明独 ±24</li>
           </ul>
-          <div className="bh-hero" style={{ backgroundImage: `url(${theme === "day" ? art.sceneDay : art.sceneNight})` }}>
-            <div className="bh-showcase" aria-hidden="true">
-              {SHOWCASE.map((card, index) => <CardView key={card} card={card} scale={2} style={{ "--i": index } as CSSProperties} />)}
-            </div>
+          <div className="bh-showcase" aria-hidden="true">
+            {SHOWCASE.map((card, index) => <CardView key={card} card={card} scale={2} style={{ "--i": index } as CSSProperties} />)}
           </div>
         </div>
 
-        <div className="bh-home-side">
-          <section className="entry-card" aria-labelledby="entry-title">
+        <section className="entry-card" aria-labelledby="entry-title">
             <div className="entry-card-heading">
               <div>
                 <span className="section-kicker">准备开始</span>
@@ -464,11 +468,20 @@ function App() {
               </button>
             </form>
             <div className="entry-footnote"><span className="lock-icon">◇</span> 默认邀请制 · 房主可以设为公开</div>
-          </section>
-          <OnlineRooms rooms={lobbyRooms} connected={connected} busy={busy} onJoin={joinListed} />
-        </div>
+        </section>
       </section>
+      <OnlineRooms rooms={lobbyRooms} connected={connected} busy={busy} onJoin={joinListed} />
     </main>
+  );
+}
+
+/** 全屏场景背景：金銮殿铺满窗口（16:9 居中裁切），上面一层压暗的纱；各页面的面板都叠在它上面（z-index 1）。 */
+export function SceneBackdrop({ theme }: { theme: "day" | "night" }) {
+  return (
+    <div className="bh-backdrop" aria-hidden="true">
+      <div className="bh-backdrop-art" style={{ backgroundImage: `url(${theme === "day" ? bgArt.day : bgArt.night})` }} />
+      <div className="bh-backdrop-veil" />
+    </div>
   );
 }
 
